@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import MetricCard from "@/components/dashboard/MetricCard";
 import RecentPatients from "@/components/dashboard/RecentPatients";
+
+type ConsultaReciente = Prisma.consultasGetPayload<{
+  include: { paciente: { select: { nombre: true; apellido: true; celular: true } } };
+}>;
 
 const MEDICO_ID = "48315179-21eb-406d-8c8b-e172d120bdcf";
 
@@ -49,7 +54,7 @@ export default async function DashboardPage() {
   const { totalPacientes, consultasActivas, nuevosHoy, casosUrgentes, recientes } = data;
 
   // Serializar para pasar como prop al client component
-  const recientesSerializados = recientes.map((c) => ({
+  const recientesSerializados = recientes.map((c: ConsultaReciente) => ({
     ...c,
     created_at: c.created_at ? c.created_at.toISOString() : null,
     finalizada_at: c.finalizada_at ? c.finalizada_at.toISOString() : null,
