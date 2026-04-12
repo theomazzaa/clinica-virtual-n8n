@@ -13,10 +13,12 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY prisma ./prisma
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+RUN npx prisma generate
 RUN npm run build
 
 # Production image

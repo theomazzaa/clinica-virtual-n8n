@@ -1,12 +1,28 @@
 import Link from "next/link";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import MetricCard from "@/components/dashboard/MetricCard";
 import RecentPatients from "@/components/dashboard/RecentPatients";
 
-type ConsultaReciente = Prisma.consultasGetPayload<{
-  include: { paciente: { select: { nombre: true; apellido: true; celular: true } } };
-}>;
+type ConsultaReciente = {
+  id: string;
+  estado: string;
+  alarma: boolean;
+  motivo: string | null;
+  sistema: string | null;
+  created_at: Date | null;
+  finalizada_at: Date | null;
+  sintomas: unknown;
+  protocolo: unknown;
+  datos_json_completo: unknown;
+  paciente_id: string | null;
+  medico_id: string;
+  evolucion: string | null;
+  medicacion_habitual: string | null;
+  alergias: string | null;
+  motivo_alarma: string | null;
+  dentro_cobertura: boolean | null;
+  paciente: { nombre: string; apellido: string | null; celular: string | null } | null;
+};
 
 const MEDICO_ID = "48315179-21eb-406d-8c8b-e172d120bdcf";
 
