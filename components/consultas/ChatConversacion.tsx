@@ -34,7 +34,7 @@ export default function ChatConversacion({ mensajes }: { mensajes: Mensaje[] }) 
           mensajes.map((m) => {
             const esAgente = m.rol === "agente";
             return (
-              <div key={m.id} className={`flex ${esAgente ? "justify-start" : "justify-start"} gap-2`}>
+              <div key={m.id} className={`flex ${esAgente ? "justify-end" : "justify-start"} gap-2`}>
                 {!esAgente && (
                   <div className="w-7 h-7 rounded-full bg-[#E2E8F0] flex items-center justify-center flex-shrink-0 mt-1">
                     <svg className="w-4 h-4 text-[#64748B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,14 +46,23 @@ export default function ChatConversacion({ mensajes }: { mensajes: Mensaje[] }) 
                   <div
                     className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                       esAgente
-                        ? "bg-[#2563EB] text-white rounded-tl-sm"
+                        ? "bg-[#2563EB] text-white rounded-tr-sm"
                         : "bg-[#F1F5F9] text-[#1E293B] rounded-tl-sm"
                     }`}
                   >
                     {m.contenido}
                   </div>
-                  <p className="text-xs text-[#94A3B8] mt-1 px-1">{formatHora(m.created_at)}</p>
+                  <p className={`text-xs text-[#94A3B8] mt-1 px-1 ${esAgente ? "text-right" : ""}`}>
+                    {formatHora(m.created_at)}
+                  </p>
                 </div>
+                {esAgente && (
+                  <div className="w-7 h-7 rounded-full bg-[#2563EB] flex items-center justify-center flex-shrink-0 mt-1">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
               </div>
             );
           })

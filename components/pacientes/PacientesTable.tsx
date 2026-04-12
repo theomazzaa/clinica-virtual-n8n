@@ -66,6 +66,7 @@ export default function PacientesTable({ pacientes }: { pacientes: Paciente[] })
           <thead>
             <tr className="border-b border-[#E2E8F0] text-[#64748B] text-left">
               <th className="px-6 py-3 font-medium">Nombre</th>
+              <th className="px-6 py-3 font-medium">Apellido</th>
               <th className="px-6 py-3 font-medium">DNI</th>
               <th className="px-6 py-3 font-medium">Edad</th>
               <th className="px-6 py-3 font-medium">Sexo</th>
@@ -79,16 +80,15 @@ export default function PacientesTable({ pacientes }: { pacientes: Paciente[] })
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-6 py-12 text-center text-[#64748B]">
+                <td colSpan={10} className="px-6 py-12 text-center text-[#64748B]">
                   No se encontraron pacientes
                 </td>
               </tr>
             ) : (
               filtered.map((p) => (
                 <tr key={p.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors">
-                  <td className="px-6 py-4 font-medium text-[#1E293B]">
-                    {p.nombre} {p.apellido ?? ""}
-                  </td>
+                  <td className="px-6 py-4 font-medium text-[#1E293B]">{p.nombre}</td>
+                  <td className="px-6 py-4 text-[#1E293B]">{p.apellido ?? "-"}</td>
                   <td className="px-6 py-4 text-[#64748B]">{p.dni ?? "-"}</td>
                   <td className="px-6 py-4 text-[#64748B]">{p.edad ?? "-"}</td>
                   <td className="px-6 py-4 text-[#64748B] capitalize">{p.sexo ?? "-"}</td>
