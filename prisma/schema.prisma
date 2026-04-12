@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model medicos {
+  id                 String          @id @default(uuid()) @db.Uuid
+  nombre             String          @db.VarChar(100)
+  apellido           String          @db.VarChar(100)
+  matricula_nacional String          @unique @db.VarChar(20)
+  especialidad       String?         @db.VarChar(100)
+  email              String          @unique @db.VarChar(150)
+  telefono           String?         @db.VarChar(30)
+  formacion          String?
+  experiencia        String?
+  zonas_cobertura    Json            @default("[]")
+  system_prompt      String?
+  activo             Boolean         @default(true)
+  created_at         DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?       @updatedAt @db.Timestamp(6)
+  pacientes          pacientes[]
+  consultas          consultas[]
+  suscripciones      suscripciones[]
+}
+
+model pacientes {
+  id              String      @id @default(uuid()) @db.Uuid
+  medico_id       String      @db.Uuid
+  nombre          String      @db.VarChar(100)
+  apellido        String?     @db.VarChar(100)
+  edad            Int?
+  sexo            String?     @db.VarChar(20)
+  fecha_nacimiento DateTime?  @db.Date
+  domicilio       String?
+  dni             String?     @db.VarChar(15)
+  email           String?     @db.VarChar(150)
+  celular         String?     @db.VarChar(30)
+  prepaga         String?     @db.VarChar(100)
+  plan            String?     @db.VarChar(50)
+  credencial      String?     @db.VarChar(50)
+  created_at      DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?   @updatedAt @db.Timestamp(6)
+  medico          medicos     @relation(fields: [medico_id], references: [id])
+  consultas       consultas[]
+
+  @@unique([medico_id, dni])
+}
+
+model consultas {
+  id                  String               @id @default(uuid()) @db.Uuid
+  paciente_id         String?              @db.Uuid
+  medico_id           String               @db.Uuid
+  sistema             String?              @db.VarChar(50)
+  motivo              String?
+  evolucion           String?
+  sintomas            Json                 @default("[]")
+  protocolo           Json                 @default("{}")
+  medicacion_habitual String?
+  alergias            String?
+  alarma              Boolean              @default(false)
+  motivo_alarma       String?
+  estado              String               @default("en_curso") @db.VarChar(20)
+  datos_json_completo Json?
+  dentro_cobertura    Boolean?
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  finalizada_at       DateTime?            @db.Timestamp(6)
+  paciente            pacientes?           @relation(fields: [paciente_id], references: [id])
+  medico              medicos              @relation(fields: [medico_id], references: [id])
+  mensajes            mensajes_consulta[]
+  archivos            archivos_consulta[]
+  informe             informes?
+}
+
+model mensajes_consulta {
+  id          String    @id @default(uuid()) @db.Uuid
+  consulta_id String    @db.Uuid
+  rol         String    @db.VarChar(20)
+  contenido   String
+  orden       Int
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  consulta    consultas @relation(fields: [consulta_id], references: [id])
+}
+
+model archivos_consulta {
+  id             String    @id @default(uuid()) @db.Uuid
+  consulta_id    String    @db.Uuid
+  tipo           String?   @db.VarChar(30)
+  url            String
+  nombre_archivo String?   @db.VarChar(200)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  consulta       consultas @relation(fields: [consulta_id], references: [id])
+}
+
+model informes {
+  id             String    @id @default(uuid()) @db.Uuid
+  consulta_id    String    @unique @db.Uuid
+  google_doc_url String?
+  google_doc_id  String?   @db.VarChar(100)
+  estado         String    @default("generado") @db.VarChar(20)
+  enviado_at     DateTime? @db.Timestamp(6)
+  revisado_at    DateTime? @db.Timestamp(6)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  consulta       consultas @relation(fields: [consulta_id], references: [id])
+}
+
+model planes {
+  id               String          @id @default(uuid()) @db.Uuid
+  nombre           String          @db.VarChar(50)
+  precio_mensual   Decimal         @db.Decimal(10, 2)
+  max_consultas_mes Int?
+  descripcion      String?
+  activo           Boolean         @default(true)
+  created_at       DateTime?       @default(now()) @db.Timestamp(6)
+  suscripciones    suscripciones[]
+}
+
+model suscripciones {
+  id                  String    @id @default(uuid()) @db.Uuid
+  medico_id           String    @db.Uuid
+  plan_id             String    @db.Uuid
+  estado              String    @default("activa") @db.VarChar(20)
+  fecha_inicio        DateTime  @db.Date
+  fecha_fin           DateTime? @db.Date
+  fecha_proximo_pago  DateTime? @db.Date
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  updated_at          DateTime? @updatedAt @db.Timestamp(6)
+  medico              medicos   @relation(fields: [medico_id], references: [id])
+  plan                planes    @relation(fields: [plan_id], references: [id])
+}
