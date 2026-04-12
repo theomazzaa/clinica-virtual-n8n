@@ -28,18 +28,22 @@ async function getDashboardData() {
   return { totalPacientes, consultasActivas, nuevosHoy, casosUrgentes, recientes };
 }
 
+type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
+
+const defaultData: DashboardData = {
+  totalPacientes: 0,
+  consultasActivas: 0,
+  nuevosHoy: 0,
+  casosUrgentes: 0,
+  recientes: [],
+};
+
 export default async function DashboardPage() {
-  let data;
+  let data: DashboardData = defaultData;
   try {
     data = await getDashboardData();
   } catch {
-    data = {
-      totalPacientes: 0,
-      consultasActivas: 0,
-      nuevosHoy: 0,
-      casosUrgentes: 0,
-      recientes: [],
-    };
+    data = defaultData;
   }
 
   const { totalPacientes, consultasActivas, nuevosHoy, casosUrgentes, recientes } = data;
