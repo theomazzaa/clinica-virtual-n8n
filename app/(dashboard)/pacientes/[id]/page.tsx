@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Badge from "@/components/ui/Badge";
 
@@ -18,9 +19,9 @@ function formatFechaHora(d: Date | null) {
   });
 }
 
-async function getPaciente(id: string) {
-  return prisma.pacientes.findUnique({
-    where: { id },
+async function getPaciente(id: string, medicoId: string) {
+  return prisma.pacientes.findFirst({
+    where: { id, medico_id: medicoId },
     include: {
       consultas: {
         orderBy: { created_at: "desc" },
@@ -33,9 +34,16 @@ async function getPaciente(id: string) {
   });
 }
 
-export default async function FichaPacientePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FichaPacientePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
   const { id } = await params;
-  const paciente = await getPaciente(id).catch(() => null);
+  const paciente = await getPaciente(id, session.user.id).catch(() => null);
   if (!paciente) notFound();
 
   const campos = [
@@ -63,13 +71,20 @@ export default async function FichaPacientePage({ params }: { params: Promise<{ 
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">
-            {paciente.nombre} {paciente.apellido ?? ""}
-          </h1>
-          <p className="text-[#64748B] text-sm mt-0.5">
-            Paciente desde {formatFecha(paciente.created_at)}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
+            <span className="text-[#2563EB] font-bold text-lg">
+              {paciente.nombre[0]?.toUpperCase() ?? "P"}
+            </span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-[#1E293B]">
+              {paciente.nombre} {paciente.apellido ?? ""}
+            </h1>
+            <p className="text-[#64748B] text-sm mt-0.5">
+              Paciente desde {formatFecha(paciente.created_at)}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -108,7 +123,11 @@ export default async function FichaPacientePage({ params }: { params: Promise<{ 
                     <div className="flex items-center gap-2 mb-1">
                       {c.alarma && (
                         <svg className="w-4 h-4 text-[#EF4444]" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                       <span className="text-sm font-medium text-[#1E293B]">
@@ -119,7 +138,10 @@ export default async function FichaPacientePage({ params }: { params: Promise<{ 
                     <p className="text-sm text-[#64748B] truncate">{c.motivo ?? "Sin motivo"}</p>
                     <p className="text-xs text-[#94A3B8] mt-1">{formatFechaHora(c.created_at)}</p>
                   </div>
-                  <svg className="w-5 h-5 text-[#CBD5E1] group-hover:text-[#2563EB] transition-colors ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-5 h-5 text-[#CBD5E1] group-hover:text-[#2563EB] transition-colors ml-4"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </Link>

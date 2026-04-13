@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Badge from "@/components/ui/Badge";
-
-const MEDICO_ID = "48315179-21eb-406d-8c8b-e172d120bdcf";
 
 function formatFechaHora(d: Date | null) {
   if (!d) return "-";
@@ -14,31 +14,38 @@ function formatFechaHora(d: Date | null) {
   });
 }
 
-async function getAlarmas() {
+async function getAlarmas(medicoId: string) {
   return prisma.consultas.findMany({
-    where: { medico_id: MEDICO_ID, alarma: true },
+    where: { medico_id: medicoId, alarma: true },
     orderBy: { created_at: "desc" },
     include: {
       paciente: { select: { id: true, nombre: true, apellido: true, celular: true } },
-      informe: { select: { google_doc_url: true } },
+      informe: { select: { google_doc_url: true, estado: true } },
     },
   });
 }
 
 export default async function AlarmasPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
   let alarmas: Awaited<ReturnType<typeof getAlarmas>> = [];
   try {
-    alarmas = await getAlarmas();
+    alarmas = await getAlarmas(session.user.id);
   } catch (e) {
     console.error(e);
   }
+
+  const noRevisadas = alarmas.filter((a) => a.informe?.estado !== "revisado").length;
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#1E293B]">Alertas</h1>
         <p className="text-[#64748B] mt-1">
-          {alarmas.length === 0 ? "Sin alertas activas" : `${alarmas.length} consulta${alarmas.length !== 1 ? "s" : ""} con alarma`}
+          {alarmas.length === 0
+            ? "Sin alertas activas"
+            : `${alarmas.length} consulta${alarmas.length !== 1 ? "s" : ""} con alarma${noRevisadas > 0 ? ` · ${noRevisadas} sin revisar` : ""}`}
         </p>
       </div>
 
@@ -58,19 +65,37 @@ export default async function AlarmasPage() {
             const nombre = c.paciente
               ? `${c.paciente.nombre} ${c.paciente.apellido ?? ""}`.trim()
               : "Paciente desconocido";
+            const revisada = c.informe?.estado === "revisado";
             return (
-              <div key={c.id} className="bg-white rounded-xl shadow-sm border border-red-200 bg-[#FEF2F2]">
+              <div
+                key={c.id}
+                className={`bg-white rounded-xl shadow-sm border ${
+                  revisada ? "border-[#E2E8F0]" : "border-red-200 bg-[#FEF2F2]"
+                }`}
+              >
                 <div className="px-6 py-4 flex items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-[#EF4444]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        revisada ? "bg-green-100" : "bg-red-100"
+                      }`}
+                    >
+                      {revisada ? (
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-[#EF4444]" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd" />
+                        </svg>
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-[#1E293B]">{nombre}</span>
-                        <Badge variant="urgente" />
+                        <Badge variant={revisada ? "finalizada" : "urgente"} />
                         <span className="text-sm text-[#64748B]">{c.sistema ?? ""}</span>
                       </div>
                       <p className="text-sm text-[#64748B]">{c.motivo ?? "Sin motivo"}</p>

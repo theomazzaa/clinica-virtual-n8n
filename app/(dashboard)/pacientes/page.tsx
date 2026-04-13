@@ -1,13 +1,13 @@
 export const dynamic = "force-dynamic";
 
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PacientesTable from "@/components/pacientes/PacientesTable";
 
-const MEDICO_ID = "48315179-21eb-406d-8c8b-e172d120bdcf";
-
-async function getPacientes() {
+async function getPacientes(medicoId: string) {
   return prisma.pacientes.findMany({
-    where: { medico_id: MEDICO_ID },
+    where: { medico_id: medicoId },
     orderBy: { created_at: "desc" },
     include: {
       consultas: {
@@ -21,9 +21,12 @@ async function getPacientes() {
 }
 
 export default async function PacientesPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
   let pacientes: Awaited<ReturnType<typeof getPacientes>> = [];
   try {
-    pacientes = await getPacientes();
+    pacientes = await getPacientes(session.user.id);
   } catch (e) {
     console.error(e);
   }

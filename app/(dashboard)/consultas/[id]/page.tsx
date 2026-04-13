@@ -1,15 +1,17 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Badge from "@/components/ui/Badge";
 import ChatConversacion from "@/components/consultas/ChatConversacion";
 import FichaClinica from "@/components/consultas/FichaClinica";
+import DevolucionMedico from "@/components/consultas/DevolucionMedico";
 
-async function getConsulta(id: string) {
-  return prisma.consultas.findUnique({
-    where: { id },
+async function getConsulta(id: string, medicoId: string) {
+  return prisma.consultas.findFirst({
+    where: { id, medico_id: medicoId },
     include: {
       paciente: true,
       mensajes: { orderBy: { orden: "asc" } },
@@ -26,9 +28,16 @@ function formatFechaHora(d: Date | null) {
   });
 }
 
-export default async function DetalleConsultaPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DetalleConsultaPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
   const { id } = await params;
-  const consulta = await getConsulta(id).catch(() => null);
+  const consulta = await getConsulta(id, session.user.id).catch(() => null);
   if (!consulta) notFound();
 
   const paciente = consulta.paciente;
@@ -46,9 +55,15 @@ export default async function DetalleConsultaPage({ params }: { params: Promise<
   const informeSerializado = consulta.informe
     ? {
         ...consulta.informe,
-        created_at: consulta.informe.created_at ? consulta.informe.created_at.toISOString() : null,
-        enviado_at: consulta.informe.enviado_at ? consulta.informe.enviado_at.toISOString() : null,
-        revisado_at: consulta.informe.revisado_at ? consulta.informe.revisado_at.toISOString() : null,
+        created_at: consulta.informe.created_at
+          ? consulta.informe.created_at.toISOString()
+          : null,
+        enviado_at: consulta.informe.enviado_at
+          ? consulta.informe.enviado_at.toISOString()
+          : null,
+        revisado_at: consulta.informe.revisado_at
+          ? consulta.informe.revisado_at.toISOString()
+          : null,
       }
     : null;
 
@@ -62,7 +77,10 @@ export default async function DetalleConsultaPage({ params }: { params: Promise<
             className="text-[#64748B] hover:text-[#1E293B] transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </Link>
           <div>
@@ -71,7 +89,11 @@ export default async function DetalleConsultaPage({ params }: { params: Promise<
               <Badge variant={badgeVariant} />
               {consulta.alarma && (
                 <svg className="w-5 h-5 text-[#EF4444]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
             </div>
@@ -85,21 +107,30 @@ export default async function DetalleConsultaPage({ params }: { params: Promise<
       {/* Dos columnas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChatConversacion mensajes={mensajesSerializados} />
-        <FichaClinica
-          consulta={{
-            motivo: consulta.motivo,
-            evolucion: consulta.evolucion,
-            alarma: consulta.alarma,
-            motivo_alarma: consulta.motivo_alarma,
-            sintomas: consulta.sintomas as Record<string, unknown>,
-            medicacion_habitual: consulta.medicacion_habitual,
-            alergias: consulta.alergias,
-            dentro_cobertura: consulta.dentro_cobertura,
-          }}
-          paciente={paciente ? { prepaga: paciente.prepaga } : null}
-          informe={informeSerializado}
-          consultaId={id}
-        />
+        <div className="flex flex-col gap-6">
+          <FichaClinica
+            consulta={{
+              motivo: consulta.motivo,
+              evolucion: consulta.evolucion,
+              alarma: consulta.alarma,
+              motivo_alarma: consulta.motivo_alarma,
+              sintomas: consulta.sintomas as Record<string, unknown>,
+              medicacion_habitual: consulta.medicacion_habitual,
+              alergias: consulta.alergias,
+              dentro_cobertura: consulta.dentro_cobertura,
+            }}
+            paciente={paciente ? { prepaga: paciente.prepaga } : null}
+            informe={informeSerializado}
+            consultaId={id}
+          />
+          <DevolucionMedico
+            consultaId={id}
+            devolucionInicial={consulta.devolucion_medico ?? null}
+            devolucionAtInicial={
+              consulta.devolucion_at ? consulta.devolucion_at.toISOString() : null
+            }
+          />
+        </div>
       </div>
     </div>
   );
