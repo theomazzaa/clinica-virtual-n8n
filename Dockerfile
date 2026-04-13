@@ -28,6 +28,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Variables de entorno con defaults — sobreescribir en Easypanel con los valores reales
+ENV AUTH_SECRET="docagent-secret-k3y-c1inica-v1rtual-2024"
+ENV NEXTAUTH_SECRET="docagent-secret-k3y-c1inica-v1rtual-2024"
+ENV NEXTAUTH_URL="http://localhost:3000"
+ENV DATABASE_URL="postgresql://postgres:fc952adf1733c9d91d4b@n8n_postgres:5432/clinica_virtual?sslmode=disable"
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
