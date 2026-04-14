@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Rutas públicas (páginas y APIs sin autenticación)
-  const publicPaths = ["/login", "/registro", "/api/registro", "/api/seed"];
+  const publicPaths = ["/login", "/registro", "/api/registro", "/api/seed", "/api/reset-password"];
   const esPublica = publicPaths.some((p) => pathname.startsWith(p));
 
   const token = await getToken({
