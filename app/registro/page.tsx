@@ -43,7 +43,7 @@ export default function RegistroPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <img src="/logo_docagent.png" alt="DocAgent" className="w-12 h-12 object-contain" />
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-20 h-20 object-contain" />
           <div>
             <h1 className="text-2xl font-bold text-[#1E293B]">DocAgent</h1>
             <p className="text-xs text-[#64748B]">Panel médico clínica virtual</p>
