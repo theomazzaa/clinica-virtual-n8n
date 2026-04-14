@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Rutas API de auth siempre públicas
@@ -13,22 +13,32 @@ export default auth((req) => {
   const publicPaths = ["/login", "/registro", "/api/registro", "/api/seed", "/api/reset-password"];
   const esPublica = publicPaths.some((p) => pathname.startsWith(p));
 
-  const isLoggedIn = !!req.auth;
+  // Auth.js v5 usa cookies con prefijo "authjs" en vez de "next-auth"
+  const isSecure = req.nextUrl.protocol === "https:";
+  const cookieName = isSecure
+    ? "__Secure-authjs.session-token"
+    : "authjs.session-token";
+
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+    cookieName,
+  });
 
   if (esPublica) {
-    if (isLoggedIn) {
+    if (token) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
     return NextResponse.next();
   }
 
   // Proteger todo lo demás
-  if (!isLoggedIn) {
+  if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
