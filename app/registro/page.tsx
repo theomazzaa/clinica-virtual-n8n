@@ -42,12 +42,10 @@ export default function RegistroPage() {
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <img src="/logo_docagent.png" alt="DocAgent" className="w-64 h-64 object-contain" />
-          <div>
-            <h1 className="text-2xl font-bold text-[#1E293B]">DocAgent</h1>
-            <p className="text-xs text-[#64748B]">Panel médico clínica virtual</p>
-          </div>
+        <div className="flex flex-col items-center mb-8">
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-40 h-40 object-contain mix-blend-multiply" />
+          <h1 className="text-2xl font-bold text-[#1E293B] mt-2">DocAgent</h1>
+          <p className="text-xs text-[#64748B]">Panel médico clínica virtual</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-8">

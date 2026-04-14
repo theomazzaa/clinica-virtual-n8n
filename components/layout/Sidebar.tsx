@@ -70,11 +70,9 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-[#E2E8F0] flex flex-col z-10">
       {/* Logo DocAgent */}
       <div className="px-6 py-5 border-b border-[#E2E8F0]">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo_docagent.png" alt="DocAgent" className="w-40 h-40 object-contain flex-shrink-0" />
-          <div>
-            <span className="text-lg font-bold text-[#1E293B]">DocAgent</span>
-          </div>
+        <div className="flex flex-col items-center">
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-24 h-24 object-contain mix-blend-multiply" />
+          <span className="text-lg font-bold text-[#1E293B] mt-1">DocAgent</span>
         </div>
       </div>
 
