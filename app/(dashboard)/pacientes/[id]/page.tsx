@@ -8,7 +8,7 @@ import Badge from "@/components/ui/Badge";
 
 function formatFecha(d: Date | null) {
   if (!d) return "-";
-  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Buenos_Aires" });
 }
 
 function formatFechaHora(d: Date | null) {
@@ -16,6 +16,7 @@ function formatFechaHora(d: Date | null) {
   return d.toLocaleDateString("es-AR", {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Buenos_Aires",
   });
 }
 

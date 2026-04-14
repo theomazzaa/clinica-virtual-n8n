@@ -10,7 +10,7 @@ type Mensaje = {
 
 function formatHora(d: string | null) {
   if (!d) return "";
-  return new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Buenos_Aires" });
 }
 
 export default function ChatConversacion({ mensajes }: { mensajes: Mensaje[] }) {

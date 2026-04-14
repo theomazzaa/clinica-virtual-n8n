@@ -19,7 +19,7 @@ type Paciente = {
 
 function formatFecha(d: string | null) {
   if (!d) return "-";
-  return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Buenos_Aires" });
 }
 
 export default function PacientesTable({ pacientes }: { pacientes: Paciente[] }) {
