@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-export async function middleware(req: NextRequest) {
+export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Rutas API de auth siempre públicas
@@ -13,25 +13,22 @@ export async function middleware(req: NextRequest) {
   const publicPaths = ["/login", "/registro", "/api/registro", "/api/seed", "/api/reset-password"];
   const esPublica = publicPaths.some((p) => pathname.startsWith(p));
 
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-  });
+  const isLoggedIn = !!req.auth;
 
   if (esPublica) {
-    if (token) {
+    if (isLoggedIn) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
     return NextResponse.next();
   }
 
   // Proteger todo lo demás
-  if (!token) {
+  if (!isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
