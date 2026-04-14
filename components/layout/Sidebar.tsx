@@ -71,8 +71,8 @@ export default function Sidebar() {
       {/* Logo DocAgent */}
       <div className="px-6 py-5 border-b border-[#E2E8F0]">
         <div className="flex flex-col items-center">
-          <img src="/logo_docagent.png" alt="DocAgent" className="w-24 h-24 object-contain mix-blend-multiply" />
-          <span className="text-lg font-bold text-[#1E293B] mt-1">DocAgent</span>
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-32 h-32 object-contain mix-blend-multiply" />
+          <span className="text-lg font-bold text-[#1E293B] -mt-2">DocAgent</span>
         </div>
       </div>
 
