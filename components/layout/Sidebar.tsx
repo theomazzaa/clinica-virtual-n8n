@@ -71,12 +71,7 @@ export default function Sidebar() {
       {/* Logo DocAgent */}
       <div className="px-6 py-5 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-[#2563EB] rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-            </svg>
-          </div>
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-9 h-9 object-contain flex-shrink-0" />
           <div>
             <span className="text-lg font-bold text-[#1E293B]">DocAgent</span>
           </div>

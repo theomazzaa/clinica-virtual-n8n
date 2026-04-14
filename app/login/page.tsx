@@ -38,12 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-[#2563EB] rounded-xl flex items-center justify-center">
-            <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-            </svg>
-          </div>
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-12 h-12 object-contain" />
           <div>
             <h1 className="text-2xl font-bold text-[#1E293B]">DocAgent</h1>
             <p className="text-xs text-[#64748B]">Panel médico clínica virtual</p>
