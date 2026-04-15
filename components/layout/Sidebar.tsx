@@ -54,6 +54,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [alertasCount, setAlertasCount] = useState<number | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const nombre = (session?.user as { nombre?: string })?.nombre ?? session?.user?.name ?? "";
   const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
@@ -66,8 +67,13 @@ export default function Sidebar() {
       .catch(() => setAlertasCount(0));
   }, []);
 
-  return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-[#E2E8F0] flex flex-col z-10">
+  // Cerrar sidebar mobile al navegar
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const sidebarContent = (
+    <>
       {/* Logo DocAgent */}
       <div className="px-6 py-5 border-b border-[#E2E8F0]">
         <div className="flex flex-col items-center">
@@ -135,6 +141,58 @@ export default function Sidebar() {
           Salir
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-4 z-30">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="p-2 -ml-2 text-[#64748B] hover:text-[#1E293B] transition-colors"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <img src="/logo_docagent.png" alt="DocAgent" className="w-8 h-8 object-contain mix-blend-multiply" />
+          <span className="font-bold text-[#1E293B]">DocAgent</span>
+        </div>
+        <div className="w-10" /> {/* spacer for centering */}
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar (slide-in) */}
+      <aside
+        className={`md:hidden fixed left-0 top-0 h-full w-72 bg-white border-r border-[#E2E8F0] flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-4 right-4 p-1 text-[#64748B] hover:text-[#1E293B] transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-white border-r border-[#E2E8F0] flex-col z-10">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

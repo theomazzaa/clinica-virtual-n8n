@@ -41,9 +41,9 @@ export default async function AlarmasPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#1E293B]">Alertas</h1>
-        <p className="text-[#64748B] mt-1">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-[#1E293B]">Alertas</h1>
+        <p className="text-sm md:text-base text-[#64748B] mt-1">
           {alarmas.length === 0
             ? "Sin alertas activas"
             : `${alarmas.length} consulta${alarmas.length !== 1 ? "s" : ""} con alarma${noRevisadas > 0 ? ` · ${noRevisadas} sin revisar` : ""}`}
@@ -74,7 +74,7 @@ export default async function AlarmasPage() {
                   revisada ? "border-[#E2E8F0]" : "border-red-200 bg-[#FEF2F2]"
                 }`}
               >
-                <div className="px-6 py-4 flex items-center justify-between gap-4">
+                <div className="px-4 md:px-6 py-4">
                   <div className="flex items-start gap-3">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -93,8 +93,8 @@ export default async function AlarmasPage() {
                         </svg>
                       )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="font-semibold text-[#1E293B]">{nombre}</span>
                         <Badge variant={revisada ? "finalizada" : "urgente"} />
                         <span className="text-sm text-[#64748B]">{c.sistema ?? ""}</span>
@@ -106,25 +106,25 @@ export default async function AlarmasPage() {
                       <p className="text-xs text-[#94A3B8] mt-1">
                         {c.paciente?.celular ?? ""} · {formatFechaHora(c.created_at)}
                       </p>
+                      <div className="flex items-center gap-2 mt-3 md:mt-2 flex-wrap">
+                        {c.informe?.google_doc_url && (
+                          <a
+                            href={c.informe.google_doc_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 text-sm border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-white transition-colors"
+                          >
+                            Ver informe
+                          </a>
+                        )}
+                        <Link
+                          href={`/consultas/${c.id}`}
+                          className="px-3 py-1.5 text-sm bg-[#EF4444] text-white rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                          Ver detalle →
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {c.informe?.google_doc_url && (
-                      <a
-                        href={c.informe.google_doc_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 text-sm border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-white transition-colors"
-                      >
-                        Ver informe
-                      </a>
-                    )}
-                    <Link
-                      href={`/consultas/${c.id}`}
-                      className="px-3 py-1.5 text-sm bg-[#EF4444] text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      Ver detalle →
-                    </Link>
                   </div>
                 </div>
               </div>

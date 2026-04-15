@@ -73,38 +73,38 @@ export default function RecentPatients({ consultas }: RecentPatientsProps) {
           <Link
             key={c.id}
             href={`/consultas/${c.id}`}
-            className="flex items-center gap-4 py-4 px-2 hover:bg-[#F8FAFC] rounded-lg transition-colors group"
+            className="flex items-center gap-3 md:gap-4 py-3 md:py-4 px-2 hover:bg-[#F8FAFC] rounded-lg transition-colors group"
           >
             {/* Avatar */}
             <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold text-lg flex-shrink-0 ${getAvatarColor(nombre)}`}
+              className={`w-9 h-9 md:w-11 md:h-11 rounded-full flex items-center justify-center text-white font-semibold text-sm md:text-lg flex-shrink-0 ${getAvatarColor(nombre)}`}
             >
               {getInitial(nombre)}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-[#1E293B] truncate">{nombre}</p>
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <p className="font-medium text-[#1E293B] text-sm md:text-base truncate">{nombre}</p>
                 {c.alarma && (
                   <svg className="w-4 h-4 text-[#EF4444] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                 )}
               </div>
-              <p className="text-sm text-[#64748B] truncate">
+              <p className="text-xs md:text-sm text-[#64748B] truncate">
                 {c.paciente?.celular ?? "Sin teléfono"}
               </p>
             </div>
 
             {/* Right */}
-            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-              <p className="text-xs text-[#64748B]">{formatFecha(c.created_at)}</p>
+            <div className="flex flex-col items-end gap-1 md:gap-1.5 flex-shrink-0">
+              <p className="text-[10px] md:text-xs text-[#64748B]">{formatFecha(c.created_at)}</p>
               <Badge variant={badgeVariant} />
             </div>
 
             {/* Arrow */}
-            <svg className="w-5 h-5 text-[#CBD5E1] group-hover:text-[#2563EB] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 md:w-5 md:h-5 text-[#CBD5E1] group-hover:text-[#2563EB] transition-colors flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>

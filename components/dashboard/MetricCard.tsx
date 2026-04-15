@@ -19,12 +19,12 @@ export default function MetricCard({
   color = "blue",
 }: MetricCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-6 flex items-center justify-between">
-      <div>
-        <p className="text-sm text-[#64748B] font-medium">{title}</p>
-        <p className="text-3xl font-bold text-[#1E293B] mt-1">{value}</p>
+    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-4 md:p-6 flex items-center justify-between">
+      <div className="min-w-0">
+        <p className="text-xs md:text-sm text-[#64748B] font-medium truncate">{title}</p>
+        <p className="text-2xl md:text-3xl font-bold text-[#1E293B] mt-1">{value}</p>
       </div>
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorMap[color]}`}>
+      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}>
         {icon}
       </div>
     </div>

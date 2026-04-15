@@ -63,7 +63,7 @@ export default function FichaClinica({ consulta, paciente, informe, consultaId }
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] flex flex-col h-[calc(100vh-220px)]">
+    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] flex flex-col h-auto md:h-[calc(100vh-220px)]">
       {/* Header */}
       <div className="px-6 py-4 border-b border-[#E2E8F0]">
         <h2 className="font-semibold text-[#1E293B]">Ficha clínica</h2>

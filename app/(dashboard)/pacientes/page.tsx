@@ -44,9 +44,9 @@ export default async function PacientesPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#1E293B]">Pacientes</h1>
-        <p className="text-[#64748B] mt-1">{serialized.length} pacientes registrados</p>
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-[#1E293B]">Pacientes</h1>
+        <p className="text-sm md:text-base text-[#64748B] mt-1">{serialized.length} pacientes registrados</p>
       </div>
       <PacientesTable pacientes={serialized} />
     </div>

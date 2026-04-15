@@ -15,7 +15,7 @@ function formatHora(d: string | null) {
 
 export default function ChatConversacion({ mensajes }: { mensajes: Mensaje[] }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] flex flex-col h-[calc(100vh-220px)]">
+    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] flex flex-col h-[60vh] md:h-[calc(100vh-220px)]">
       {/* Header */}
       <div className="px-6 py-4 border-b border-[#E2E8F0]">
         <h2 className="font-semibold text-[#1E293B]">

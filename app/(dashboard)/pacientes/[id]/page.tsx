@@ -63,26 +63,26 @@ export default async function FichaPacientePage({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
         <Link
           href="/pacientes"
-          className="text-[#64748B] hover:text-[#1E293B] transition-colors"
+          className="text-[#64748B] hover:text-[#1E293B] transition-colors flex-shrink-0"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
-            <span className="text-[#2563EB] font-bold text-lg">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
+            <span className="text-[#2563EB] font-bold text-base md:text-lg">
               {paciente.nombre[0]?.toUpperCase() ?? "P"}
             </span>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-[#1E293B]">
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl font-bold text-[#1E293B] truncate">
               {paciente.nombre} {paciente.apellido ?? ""}
             </h1>
-            <p className="text-[#64748B] text-sm mt-0.5">
+            <p className="text-[#64748B] text-xs md:text-sm mt-0.5">
               Paciente desde {formatFecha(paciente.created_at)}
             </p>
           </div>
