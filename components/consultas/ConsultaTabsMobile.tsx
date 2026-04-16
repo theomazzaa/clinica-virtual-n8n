@@ -4,6 +4,7 @@ import { useState } from "react";
 import ChatConversacion from "@/components/consultas/ChatConversacion";
 import FichaClinica from "@/components/consultas/FichaClinica";
 import DevolucionMedico from "@/components/consultas/DevolucionMedico";
+import ArchivosAdjuntos from "@/components/consultas/ArchivosAdjuntos";
 
 type Mensaje = {
   id: string;
@@ -86,7 +87,10 @@ export default function ConsultaTabsMobile({
         </div>
 
         {tabActivo === "conversacion" && (
-          <ChatConversacion mensajes={mensajes} />
+          <div className="flex flex-col gap-4">
+            <ChatConversacion mensajes={mensajes} />
+            <ArchivosAdjuntos consultaId={fichaClinicaProps.consultaId} />
+          </div>
         )}
         {tabActivo === "ficha" && (
           <div className="flex flex-col gap-4">
@@ -98,7 +102,10 @@ export default function ConsultaTabsMobile({
 
       {/* Desktop: dos columnas (lg+) */}
       <div className="hidden lg:grid lg:grid-cols-2 gap-6">
-        <ChatConversacion mensajes={mensajes} />
+        <div className="flex flex-col gap-6">
+          <ChatConversacion mensajes={mensajes} />
+          <ArchivosAdjuntos consultaId={fichaClinicaProps.consultaId} />
+        </div>
         <div className="flex flex-col gap-6">
           <FichaClinica {...fichaClinicaProps} />
           <DevolucionMedico {...devolucionMedicoProps} />
