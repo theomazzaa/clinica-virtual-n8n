@@ -4,21 +4,13 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import Badge from "@/components/ui/Badge";
+import ConsultasList from "@/components/pacientes/ConsultasList";
 
 function formatFecha(d: Date | null) {
   if (!d) return "-";
   return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Buenos_Aires" });
 }
 
-function formatFechaHora(d: Date | null) {
-  if (!d) return "-";
-  return d.toLocaleDateString("es-AR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Buenos_Aires",
-  });
-}
 
 async function getPaciente(id: string, medicoId: string) {
   return prisma.pacientes.findFirst({
@@ -28,7 +20,7 @@ async function getPaciente(id: string, medicoId: string) {
         orderBy: { created_at: "desc" },
         select: {
           id: true, sistema: true, motivo: true, estado: true,
-          alarma: true, created_at: true,
+          alarma: true, created_at: true, finalizada_at: true,
         },
       },
     },
@@ -46,6 +38,12 @@ export default async function FichaPacientePage({
   const { id } = await params;
   const paciente = await getPaciente(id, session.user.id).catch(() => null);
   if (!paciente) notFound();
+
+  const consultasSerializadas = paciente.consultas.map((c) => ({
+    ...c,
+    created_at: c.created_at ? c.created_at.toISOString() : null,
+    finalizada_at: c.finalizada_at ? c.finalizada_at.toISOString() : null,
+  }));
 
   const campos = [
     { label: "DNI", value: paciente.dni },
@@ -110,44 +108,8 @@ export default async function FichaPacientePage({
               Historial de consultas ({paciente.consultas.length})
             </h2>
           </div>
-          <div className="divide-y divide-[#E2E8F0]">
-            {paciente.consultas.length === 0 ? (
-              <p className="px-6 py-12 text-center text-[#64748B]">Sin consultas registradas</p>
-            ) : (
-              paciente.consultas.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/consultas/${c.id}`}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-[#F8FAFC] transition-colors group"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {c.alarma && (
-                        <svg className="w-4 h-4 text-[#EF4444]" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                      <span className="text-sm font-medium text-[#1E293B]">
-                        {c.sistema ?? "Sin sistema"}
-                      </span>
-                      <Badge variant={c.alarma ? "urgente" : c.estado} />
-                    </div>
-                    <p className="text-sm text-[#64748B] truncate">{c.motivo ?? "Sin motivo"}</p>
-                    <p className="text-xs text-[#94A3B8] mt-1">{formatFechaHora(c.created_at)}</p>
-                  </div>
-                  <svg
-                    className="w-5 h-5 text-[#CBD5E1] group-hover:text-[#2563EB] transition-colors ml-4"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              ))
-            )}
+          <div className="p-4">
+            <ConsultasList consultas={consultasSerializadas} />
           </div>
         </div>
       </div>
