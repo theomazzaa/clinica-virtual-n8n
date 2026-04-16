@@ -5,9 +5,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Badge from "@/components/ui/Badge";
-import ChatConversacion from "@/components/consultas/ChatConversacion";
-import FichaClinica from "@/components/consultas/FichaClinica";
-import DevolucionMedico from "@/components/consultas/DevolucionMedico";
+import ConsultaTabsMobile from "@/components/consultas/ConsultaTabsMobile";
 
 async function getConsulta(id: string, medicoId: string) {
   return prisma.consultas.findFirst({
@@ -105,34 +103,31 @@ export default async function DetalleConsultaPage({
         </div>
       </div>
 
-      {/* Dos columnas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChatConversacion mensajes={mensajesSerializados} />
-        <div className="flex flex-col gap-6">
-          <FichaClinica
-            consulta={{
-              motivo: consulta.motivo,
-              evolucion: consulta.evolucion,
-              alarma: consulta.alarma,
-              motivo_alarma: consulta.motivo_alarma,
-              sintomas: consulta.sintomas as Record<string, unknown>,
-              medicacion_habitual: consulta.medicacion_habitual,
-              alergias: consulta.alergias,
-              dentro_cobertura: consulta.dentro_cobertura,
-            }}
-            paciente={paciente ? { prepaga: paciente.prepaga } : null}
-            informe={informeSerializado}
-            consultaId={id}
-          />
-          <DevolucionMedico
-            consultaId={id}
-            devolucionInicial={consulta.devolucion_medico ?? null}
-            devolucionAtInicial={
-              consulta.devolucion_at ? consulta.devolucion_at.toISOString() : null
-            }
-          />
-        </div>
-      </div>
+      {/* Tabs mobile / dos columnas desktop */}
+      <ConsultaTabsMobile
+        mensajes={mensajesSerializados}
+        fichaClinicaProps={{
+          consulta: {
+            motivo: consulta.motivo,
+            evolucion: consulta.evolucion,
+            alarma: consulta.alarma,
+            motivo_alarma: consulta.motivo_alarma,
+            sintomas: consulta.sintomas as Record<string, unknown>,
+            medicacion_habitual: consulta.medicacion_habitual,
+            alergias: consulta.alergias,
+            dentro_cobertura: consulta.dentro_cobertura,
+          },
+          paciente: paciente ? { prepaga: paciente.prepaga } : null,
+          informe: informeSerializado,
+          consultaId: id,
+        }}
+        devolucionMedicoProps={{
+          consultaId: id,
+          devolucionInicial: consulta.devolucion_medico ?? null,
+          devolucionAtInicial:
+            consulta.devolucion_at ? consulta.devolucion_at.toISOString() : null,
+        }}
+      />
     </div>
   );
 }
