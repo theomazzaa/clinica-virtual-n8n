@@ -13,7 +13,12 @@ async function getPacientes(medicoId: string) {
       consultas: {
         orderBy: { created_at: "desc" },
         take: 1,
-        select: { created_at: true, estado: true },
+        select: {
+          created_at: true,
+          estado: true,
+          alarma: true,
+          informe: { select: { google_doc_url: true } },
+        },
       },
       _count: { select: { consultas: true } },
     },
@@ -39,6 +44,7 @@ export default async function PacientesPage() {
     consultas: p.consultas.map((c) => ({
       ...c,
       created_at: c.created_at ? c.created_at.toISOString() : null,
+      informe: c.informe ?? null,
     })),
   }));
 
