@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Check, X, MapPin, Bot } from "lucide-react";
+import { toast } from "sonner";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
 
 type MedicoData = {
   id: string;
@@ -16,32 +21,25 @@ type MedicoData = {
 
 type Props = { medico: MedicoData };
 
-function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-6">
-      <h2 className="font-semibold text-[#1E293B] mb-5 text-lg">{titulo}</h2>
-      {children}
-    </div>
-  );
-}
-
-function Input({
-  label, value, onChange, type = "text", readOnly = false, placeholder,
+function Seccion({
+  titulo,
+  descripcion,
+  children,
 }: {
-  label: string; value: string; onChange?: (v: string) => void;
-  type?: string; readOnly?: boolean; placeholder?: string;
+  titulo: string;
+  descripcion?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-[#1E293B] mb-1.5">{label}</label>
-      <input
-        type={type} value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        readOnly={readOnly} placeholder={placeholder}
-        className={`w-full px-3.5 py-2.5 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all ${
-          readOnly ? "bg-[#F8FAFC] text-[#64748B] cursor-default" : ""
-        }`}
-      />
+    <div className="bg-surface rounded-[var(--radius-lg)] shadow-xs border border-border p-5 md:p-6">
+      <h2 className="font-semibold text-text-primary text-[15px] mb-1">
+        {titulo}
+      </h2>
+      {descripcion && (
+        <p className="text-xs text-text-muted mb-5">{descripcion}</p>
+      )}
+      {!descripcion && <div className="mb-5" />}
+      {children}
     </div>
   );
 }
@@ -55,30 +53,25 @@ export default function ConfiguracionCliente({ medico }: Props) {
     especialidad: medico.especialidad ?? "",
   });
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
-  const [perfilOk, setPerfilOk] = useState(false);
   const [perfilError, setPerfilError] = useState("");
 
   // Password
   const [pass, setPass] = useState({ actual: "", nuevo: "", confirmar: "" });
   const [guardandoPass, setGuardandoPass] = useState(false);
-  const [passOk, setPassOk] = useState(false);
   const [passError, setPassError] = useState("");
 
   // Zonas
   const [zonas, setZonas] = useState<string[]>(medico.zonas_cobertura);
   const [nuevaZona, setNuevaZona] = useState("");
   const [guardandoZonas, setGuardandoZonas] = useState(false);
-  const [zonasOk, setZonasOk] = useState(false);
 
   // System prompt
   const [prompt, setPrompt] = useState(medico.system_prompt ?? "");
   const [guardandoPrompt, setGuardandoPrompt] = useState(false);
-  const [promptOk, setPromptOk] = useState(false);
 
   async function guardarPerfil() {
     setGuardandoPerfil(true);
     setPerfilError("");
-    setPerfilOk(false);
     try {
       const res = await fetch("/api/medico/perfil", {
         method: "PUT",
@@ -87,12 +80,12 @@ export default function ConfiguracionCliente({ medico }: Props) {
       });
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error || "Error");
+        throw new Error(d.error || "Error al guardar");
       }
-      setPerfilOk(true);
-      setTimeout(() => setPerfilOk(false), 3000);
+      toast.success("Perfil actualizado");
     } catch (e) {
       setPerfilError((e as Error).message);
+      toast.error("Error al guardar perfil");
     } finally {
       setGuardandoPerfil(false);
     }
@@ -100,13 +93,12 @@ export default function ConfiguracionCliente({ medico }: Props) {
 
   async function cambiarPassword() {
     setPassError("");
-    setPassOk(false);
     if (pass.nuevo !== pass.confirmar) {
-      setPassError("Las contraseñas nuevas no coinciden");
+      setPassError("Las contrasenas nuevas no coinciden");
       return;
     }
     if (pass.nuevo.length < 6) {
-      setPassError("La contraseña debe tener al menos 6 caracteres");
+      setPassError("La contrasena debe tener al menos 6 caracteres");
       return;
     }
     setGuardandoPass(true);
@@ -114,15 +106,18 @@ export default function ConfiguracionCliente({ medico }: Props) {
       const res = await fetch("/api/medico/password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passwordActual: pass.actual, passwordNuevo: pass.nuevo }),
+        body: JSON.stringify({
+          passwordActual: pass.actual,
+          passwordNuevo: pass.nuevo,
+        }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "Error");
-      setPassOk(true);
+      toast.success("Contrasena actualizada");
       setPass({ actual: "", nuevo: "", confirmar: "" });
-      setTimeout(() => setPassOk(false), 3000);
     } catch (e) {
       setPassError((e as Error).message);
+      toast.error("Error al cambiar contrasena");
     } finally {
       setGuardandoPass(false);
     }
@@ -130,15 +125,15 @@ export default function ConfiguracionCliente({ medico }: Props) {
 
   async function guardarZonas() {
     setGuardandoZonas(true);
-    setZonasOk(false);
     try {
       await fetch("/api/medico/perfil", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...perfil, zonas_cobertura: zonas }),
       });
-      setZonasOk(true);
-      setTimeout(() => setZonasOk(false), 3000);
+      toast.success("Zonas actualizadas");
+    } catch {
+      toast.error("Error al guardar zonas");
     } finally {
       setGuardandoZonas(false);
     }
@@ -146,15 +141,15 @@ export default function ConfiguracionCliente({ medico }: Props) {
 
   async function guardarPrompt() {
     setGuardandoPrompt(true);
-    setPromptOk(false);
     try {
       await fetch("/api/medico/perfil", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...perfil, system_prompt: prompt }),
       });
-      setPromptOk(true);
-      setTimeout(() => setPromptOk(false), 3000);
+      toast.success("Prompt actualizado");
+    } catch {
+      toast.error("Error al guardar prompt");
     } finally {
       setGuardandoPrompt(false);
     }
@@ -169,162 +164,174 @@ export default function ConfiguracionCliente({ medico }: Props) {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-5 max-w-3xl">
       {/* Perfil */}
-      <Seccion titulo="Perfil del médico">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <Input label="Nombre" value={perfil.nombre}
-            onChange={(v) => setPerfil((p) => ({ ...p, nombre: v }))} />
-          <Input label="Apellido" value={perfil.apellido}
-            onChange={(v) => setPerfil((p) => ({ ...p, apellido: v }))} />
-          <Input label="Email" value={medico.email} readOnly />
-          <Input label="Teléfono" value={perfil.telefono}
-            onChange={(v) => setPerfil((p) => ({ ...p, telefono: v }))}
-            placeholder="+54 9 11 0000-0000" />
-          <Input label="Especialidad" value={perfil.especialidad}
-            onChange={(v) => setPerfil((p) => ({ ...p, especialidad: v }))}
-            placeholder="Clínica médica" />
-          <Input label="Matrícula" value={medico.matricula_nacional} readOnly />
+      <Seccion titulo="Perfil del medico" descripcion="Datos de tu cuenta profesional">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          <Input
+            label="Nombre"
+            value={perfil.nombre}
+            onChange={(e) =>
+              setPerfil((p) => ({ ...p, nombre: e.target.value }))
+            }
+          />
+          <Input
+            label="Apellido"
+            value={perfil.apellido}
+            onChange={(e) =>
+              setPerfil((p) => ({ ...p, apellido: e.target.value }))
+            }
+          />
+          <Input label="Email" value={medico.email} readOnly disabled />
+          <Input
+            label="Telefono"
+            value={perfil.telefono}
+            onChange={(e) =>
+              setPerfil((p) => ({ ...p, telefono: e.target.value }))
+            }
+            placeholder="+54 9 11 0000-0000"
+          />
+          <Input
+            label="Especialidad"
+            value={perfil.especialidad}
+            onChange={(e) =>
+              setPerfil((p) => ({ ...p, especialidad: e.target.value }))
+            }
+            placeholder="Clinica medica"
+          />
+          <Input
+            label="Matricula"
+            value={medico.matricula_nacional}
+            readOnly
+            disabled
+          />
         </div>
         {perfilError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+          <p className="text-xs text-danger-600 bg-danger-50 border border-danger-500/20 rounded-[var(--radius-sm)] px-3 py-2 mb-4">
             {perfilError}
           </p>
         )}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={guardarPerfil} disabled={guardandoPerfil}
-            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
-          >
-            {guardandoPerfil ? "Guardando..." : "Guardar perfil"}
-          </button>
-          {perfilOk && (
-            <span className="text-sm text-green-600 flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Guardado
-            </span>
-          )}
-        </div>
+        <Button onClick={guardarPerfil} loading={guardandoPerfil}>
+          Guardar perfil
+        </Button>
       </Seccion>
 
-      {/* Cambiar contraseña */}
-      <Seccion titulo="Cambiar contraseña">
-        <div className="space-y-4 mb-4">
-          <Input label="Contraseña actual" type="password" value={pass.actual}
-            onChange={(v) => setPass((p) => ({ ...p, actual: v }))} placeholder="••••••••" />
-          <Input label="Nueva contraseña" type="password" value={pass.nuevo}
-            onChange={(v) => setPass((p) => ({ ...p, nuevo: v }))} placeholder="••••••••" />
-          <Input label="Confirmar nueva contraseña" type="password" value={pass.confirmar}
-            onChange={(v) => setPass((p) => ({ ...p, confirmar: v }))} placeholder="••••••••" />
+      {/* Cambiar contrasena */}
+      <Seccion
+        titulo="Cambiar contrasena"
+        descripcion="Actualiza tu contrasena de acceso"
+      >
+        <div className="space-y-4 mb-5">
+          <Input
+            label="Contrasena actual"
+            type="password"
+            value={pass.actual}
+            onChange={(e) =>
+              setPass((p) => ({ ...p, actual: e.target.value }))
+            }
+            placeholder="........"
+          />
+          <Input
+            label="Nueva contrasena"
+            type="password"
+            value={pass.nuevo}
+            onChange={(e) =>
+              setPass((p) => ({ ...p, nuevo: e.target.value }))
+            }
+            placeholder="........"
+          />
+          <Input
+            label="Confirmar nueva contrasena"
+            type="password"
+            value={pass.confirmar}
+            onChange={(e) =>
+              setPass((p) => ({ ...p, confirmar: e.target.value }))
+            }
+            placeholder="........"
+          />
         </div>
         {passError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+          <p className="text-xs text-danger-600 bg-danger-50 border border-danger-500/20 rounded-[var(--radius-sm)] px-3 py-2 mb-4">
             {passError}
           </p>
         )}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={cambiarPassword} disabled={guardandoPass || !pass.actual || !pass.nuevo}
-            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
-          >
-            {guardandoPass ? "Cambiando..." : "Cambiar contraseña"}
-          </button>
-          {passOk && (
-            <span className="text-sm text-green-600 flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Contraseña actualizada
-            </span>
-          )}
-        </div>
+        <Button
+          onClick={cambiarPassword}
+          loading={guardandoPass}
+          disabled={!pass.actual || !pass.nuevo}
+        >
+          Cambiar contrasena
+        </Button>
       </Seccion>
 
       {/* Zonas de cobertura */}
-      <Seccion titulo="Zonas de cobertura">
-        <div className="flex flex-wrap gap-2 mb-4 min-h-[40px]">
+      <Seccion
+        titulo="Zonas de cobertura"
+        descripcion="Areas donde realizas atencion domiciliaria"
+      >
+        <div className="flex flex-wrap gap-2 mb-4 min-h-[36px]">
           {zonas.length === 0 ? (
-            <p className="text-sm text-[#64748B]">Sin zonas configuradas</p>
+            <p className="text-xs text-text-muted flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5" />
+              Sin zonas configuradas
+            </p>
           ) : (
             zonas.map((z) => (
               <span
                 key={z}
-                className="flex items-center gap-1.5 px-3 py-1 bg-[#EFF6FF] text-[#2563EB] text-sm rounded-full"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-50 text-primary-600 text-xs font-medium rounded-[var(--radius-full)] border border-primary-500/20"
               >
                 {z}
                 <button
                   onClick={() => setZonas(zonas.filter((x) => x !== z))}
-                  className="text-[#93C5FD] hover:text-[#EF4444] transition-colors"
+                  className="text-primary-500/50 hover:text-danger-500 transition-colors"
+                  aria-label={`Quitar ${z}`}
                 >
-                  ×
+                  <X className="w-3 h-3" />
                 </button>
               </span>
             ))
           )}
         </div>
-        <div className="flex gap-2 mb-4">
-          <input
-            value={nuevaZona}
-            onChange={(e) => setNuevaZona(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && agregarZona()}
-            placeholder="Ej: Palermo, Villa Crespo..."
-            className="flex-1 px-3.5 py-2.5 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-          />
-          <button
-            onClick={agregarZona}
-            className="px-4 py-2 border border-[#2563EB] text-[#2563EB] rounded-lg text-sm font-medium hover:bg-[#EFF6FF] transition-colors"
-          >
+        <div className="flex gap-2 mb-5">
+          <div className="flex-1">
+            <Input
+              value={nuevaZona}
+              onChange={(e) => setNuevaZona(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && agregarZona()}
+              placeholder="Ej: Palermo, Villa Crespo..."
+            />
+          </div>
+          <Button variant="secondary" onClick={agregarZona}>
             Agregar
-          </button>
+          </Button>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={guardarZonas} disabled={guardandoZonas}
-            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
-          >
-            {guardandoZonas ? "Guardando..." : "Guardar zonas"}
-          </button>
-          {zonasOk && (
-            <span className="text-sm text-green-600 flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Guardado
-            </span>
-          )}
-        </div>
+        <Button onClick={guardarZonas} loading={guardandoZonas}>
+          Guardar zonas
+        </Button>
       </Seccion>
 
       {/* System prompt */}
-      <Seccion titulo="Prompt del agente IA">
-        <p className="text-sm text-[#64748B] mb-3">
-          Personalizá el comportamiento del agente de IA que entrevista a tus pacientes.
-        </p>
-        <textarea
+      <Seccion
+        titulo="Prompt del agente IA"
+        descripcion="Personaliza el comportamiento del agente que entrevista a tus pacientes"
+      >
+        <div className="flex items-center gap-2 mb-3 text-text-muted">
+          <Bot className="w-4 h-4" />
+          <span className="text-xs">
+            Instrucciones personalizadas para la entrevista clinica
+          </span>
+        </div>
+        <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={10}
-          placeholder="Escribí las instrucciones del agente..."
-          className="w-full px-3.5 py-2.5 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent resize-y mb-4 font-mono"
+          placeholder="Escribi las instrucciones del agente..."
+          className="mb-5 font-mono text-xs"
         />
-        <div className="flex items-center gap-3">
-          <button
-            onClick={guardarPrompt} disabled={guardandoPrompt}
-            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
-          >
-            {guardandoPrompt ? "Guardando..." : "Guardar prompt"}
-          </button>
-          {promptOk && (
-            <span className="text-sm text-green-600 flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Guardado
-            </span>
-          )}
-        </div>
+        <Button onClick={guardarPrompt} loading={guardandoPrompt}>
+          Guardar prompt
+        </Button>
       </Seccion>
     </div>
   );
