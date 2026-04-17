@@ -6,6 +6,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Badge from "@/components/ui/Badge";
 import ConsultaTabsMobile from "@/components/consultas/ConsultaTabsMobile";
+import ConsultaHeaderActions from "@/components/consultas/ConsultaHeaderActions";
+import { ChevronLeft, AlertTriangle } from "lucide-react";
 
 async function getConsulta(id: string, medicoId: string) {
   return prisma.consultas.findFirst({
@@ -14,15 +16,43 @@ async function getConsulta(id: string, medicoId: string) {
       paciente: true,
       mensajes: { orderBy: { orden: "asc" } },
       informe: true,
+      archivos: { orderBy: { created_at: "asc" } },
     },
+  });
+}
+
+async function getHistorialPaciente(
+  pacienteId: string,
+  consultaActualId: string,
+  medicoId: string
+) {
+  return prisma.consultas.findMany({
+    where: {
+      paciente_id: pacienteId,
+      medico_id: medicoId,
+      id: { not: consultaActualId },
+    },
+    orderBy: { created_at: "desc" },
+    select: {
+      id: true,
+      motivo: true,
+      estado: true,
+      alarma: true,
+      sistema: true,
+      created_at: true,
+    },
+    take: 20,
   });
 }
 
 function formatFechaHora(d: Date | null) {
   if (!d) return "-";
   return d.toLocaleDateString("es-AR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone: "America/Buenos_Aires",
   });
 }
@@ -46,66 +76,81 @@ export default async function DetalleConsultaPage({
 
   const badgeVariant = consulta.alarma ? "urgente" : consulta.estado;
 
+  // Serialize dates for client
   const mensajesSerializados = consulta.mensajes.map((m) => ({
     ...m,
     created_at: m.created_at ? m.created_at.toISOString() : null,
   }));
 
-  const informeSerializado = consulta.informe
-    ? {
-        ...consulta.informe,
-        created_at: consulta.informe.created_at
-          ? consulta.informe.created_at.toISOString()
-          : null,
-        enviado_at: consulta.informe.enviado_at
-          ? consulta.informe.enviado_at.toISOString()
-          : null,
-        revisado_at: consulta.informe.revisado_at
-          ? consulta.informe.revisado_at.toISOString()
-          : null,
-      }
-    : null;
+  const archivosSerializados = consulta.archivos.map((a) => ({
+    ...a,
+    created_at: a.created_at ? a.created_at.toISOString() : null,
+  }));
+
+  // Get patient history
+  const historialRaw = paciente
+    ? await getHistorialPaciente(paciente.id, id, session.user.id).catch(
+        () => []
+      )
+    : [];
+
+  const historial = historialRaw.map((h) => ({
+    ...h,
+    created_at: h.created_at ? h.created_at.toISOString() : null,
+  }));
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-4 md:mb-6">
-        <div className="flex items-start gap-3 md:gap-4">
-          <Link
-            href={paciente ? `/pacientes/${paciente.id}` : "/pacientes"}
-            className="text-[#64748B] hover:text-[#1E293B] transition-colors mt-1 flex-shrink-0"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </Link>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg md:text-xl font-bold text-[#1E293B] break-words">{nombreCompleto}</h1>
-              <Badge variant={badgeVariant} />
-              {consulta.alarma && (
-                <svg className="w-5 h-5 text-[#EF4444] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
+      {/* ─── Sticky Header ─── */}
+      <div className="sticky top-14 md:top-0 z-10 bg-surface-secondary pb-4 md:pb-6 -mt-1">
+        <div className="flex items-start justify-between gap-4">
+          {/* Left: back + info */}
+          <div className="flex items-start gap-3 min-w-0">
+            <Link
+              href={paciente ? `/pacientes/${paciente.id}` : "/pacientes"}
+              className="text-text-muted hover:text-text-primary transition-colors mt-1.5 flex-shrink-0 focus-ring rounded-[var(--radius-sm)] p-0.5"
+              aria-label="Volver"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Link>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl md:text-2xl font-bold text-text-primary break-words leading-tight">
+                  {nombreCompleto}
+                </h1>
+                <Badge variant={badgeVariant} />
+                {consulta.alarma && (
+                  <AlertTriangle className="w-4 h-4 text-danger-500 flex-shrink-0" />
+                )}
+              </div>
+              <p className="text-xs md:text-sm text-text-muted mt-1 flex items-center gap-1.5 flex-wrap">
+                {paciente?.dni && (
+                  <>
+                    <span>DNI {paciente.dni}</span>
+                    <span className="text-border">·</span>
+                  </>
+                )}
+                <span>{paciente?.celular ?? "Sin telefono"}</span>
+                <span className="text-border">·</span>
+                <span>{formatFechaHora(consulta.created_at)}</span>
+              </p>
             </div>
-            <p className="text-xs md:text-sm text-[#64748B] mt-0.5">
-              {paciente?.celular ?? "Sin teléfono"} · {formatFechaHora(consulta.created_at)}
-            </p>
           </div>
+
+          {/* Right: actions */}
+          <ConsultaHeaderActions
+            consultaId={id}
+            informeUrl={consulta.informe?.google_doc_url ?? null}
+            informeEstado={consulta.informe?.estado ?? null}
+          />
         </div>
       </div>
 
-      {/* Tabs mobile / dos columnas desktop */}
+      {/* ─── Body ─── */}
       <ConsultaTabsMobile
         mensajes={mensajesSerializados}
+        archivos={archivosSerializados}
+        historial={historial}
         fichaClinicaProps={{
           consulta: {
             motivo: consulta.motivo,
@@ -118,14 +163,13 @@ export default async function DetalleConsultaPage({
             dentro_cobertura: consulta.dentro_cobertura,
           },
           paciente: paciente ? { prepaga: paciente.prepaga } : null,
-          informe: informeSerializado,
-          consultaId: id,
         }}
         devolucionMedicoProps={{
           consultaId: id,
           devolucionInicial: consulta.devolucion_medico ?? null,
-          devolucionAtInicial:
-            consulta.devolucion_at ? consulta.devolucion_at.toISOString() : null,
+          devolucionAtInicial: consulta.devolucion_at
+            ? consulta.devolucion_at.toISOString()
+            : null,
         }}
       />
     </div>

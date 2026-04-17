@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Save, Check, Loader2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Button from "@/components/ui/Button";
 
 type Props = {
   consultaId: string;
@@ -8,13 +11,7 @@ type Props = {
   devolucionAtInicial: string | null;
 };
 
-function formatFechaHora(iso: string) {
-  return new Date(iso).toLocaleDateString("es-AR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Argentina/Buenos_Aires",
-  });
-}
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function DevolucionMedico({
   consultaId,
@@ -22,82 +19,148 @@ export default function DevolucionMedico({
   devolucionAtInicial,
 }: Props) {
   const [texto, setTexto] = useState(devolucionInicial ?? "");
-  const [guardando, setGuardando] = useState(false);
-  const [guardadoAt, setGuardadoAt] = useState<string | null>(devolucionAtInicial);
-  const [error, setError] = useState("");
-  const [guardadoOk, setGuardadoOk] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(
+    devolucionAtInicial ? new Date(devolucionAtInicial) : null
+  );
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  async function guardar() {
-    if (!texto.trim()) return;
-    setGuardando(true);
-    setError("");
-    setGuardadoOk(false);
+  const doSave = useCallback(
+    async (value: string) => {
+      if (!value.trim()) return;
+      setSaveStatus("saving");
+      try {
+        const res = await fetch(`/api/consultas/${consultaId}/devolucion`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ devolucion: value }),
+        });
+        if (!res.ok) throw new Error();
+        setLastSavedAt(new Date());
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("error");
+      }
+    },
+    [consultaId]
+  );
 
-    try {
-      const res = await fetch(`/api/consultas/${consultaId}/devolucion`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ devolucion: texto }),
-      });
+  function handleChange(value: string) {
+    setTexto(value);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
-      if (!res.ok) throw new Error("Error al guardar");
-
-      const data = await res.json();
-      setGuardadoAt(data.devolucion_at);
-      setGuardadoOk(true);
-      setTimeout(() => setGuardadoOk(false), 3000);
-    } catch {
-      setError("No se pudo guardar la devolución. Intentá nuevamente.");
-    } finally {
-      setGuardando(false);
+    if (value.trim()) {
+      setSaveStatus("idle");
+      saveTimerRef.current = setTimeout(() => doSave(value), 2000);
     }
   }
 
+  // Keyboard shortcut: E to focus
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (
+        e.key === "e" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        textareaRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  // Cleanup timer
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  function formatRelativeTime(date: Date) {
+    const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diffSec < 5) return "recien";
+    if (diffSec < 60) return `hace ${diffSec}s`;
+    if (diffSec < 3600) return `hace ${Math.floor(diffSec / 60)}min`;
+    return date.toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Buenos_Aires",
+    });
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0]">
+    <div className="bg-surface rounded-[var(--radius-lg)] border border-border shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#E2E8F0]">
-        <h2 className="font-semibold text-[#1E293B]">Devolución del médico</h2>
-        {guardadoAt && (
-          <p className="text-xs text-[#64748B] mt-0.5">
-            Última actualización: {formatFechaHora(guardadoAt)}
-          </p>
-        )}
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold text-text-primary text-[15px]">
+            Devolucion del medico
+          </h2>
+          {/* Save status indicator */}
+          <div className="h-4 mt-0.5">
+            {saveStatus === "saving" && (
+              <span className="text-[11px] text-text-muted flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Guardando...
+              </span>
+            )}
+            {saveStatus === "saved" && lastSavedAt && (
+              <span className="text-[11px] text-success-600 flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                Guardado {formatRelativeTime(lastSavedAt)}
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="text-[11px] text-danger-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Error al guardar
+              </span>
+            )}
+            {saveStatus === "idle" && lastSavedAt && (
+              <span className="text-[11px] text-text-muted">
+                Guardado {formatRelativeTime(lastSavedAt)}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="text-[10px] text-text-muted bg-surface-secondary px-2 py-0.5 rounded-full hidden md:inline-flex items-center gap-1 border border-border">
+          <kbd className="font-mono">E</kbd> para enfocar
+        </span>
       </div>
 
-      {/* Contenido */}
+      {/* Content */}
       <div className="px-6 py-4 space-y-3">
         <textarea
+          ref={textareaRef}
           value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Escribí tu devolución, diagnóstico o indicaciones para este paciente..."
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Escribi tu devolucion, diagnostico o indicaciones para este paciente..."
           rows={5}
-          className="w-full px-3.5 py-2.5 border border-[#E2E8F0] rounded-lg text-sm text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent resize-none transition-all"
+          className={cn(
+            "w-full px-3.5 py-2.5 border rounded-[var(--radius-sm)] text-sm text-text-primary",
+            "placeholder:text-text-muted resize-y",
+            "transition-all duration-150",
+            "focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-0 focus:border-primary-600",
+            "border-border hover:border-border-strong"
+          )}
         />
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
-
-        <div className="flex items-center justify-between">
-          {guardadoOk && (
-            <span className="text-sm text-green-600 flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Guardado correctamente
-            </span>
-          )}
-          {!guardadoOk && <span />}
-          <button
-            onClick={guardar}
-            disabled={guardando || !texto.trim()}
-            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        <div className="flex justify-end">
+          <Button
+            onClick={() => doSave(texto)}
+            disabled={!texto.trim() || saveStatus === "saving"}
+            loading={saveStatus === "saving"}
+            size="sm"
           >
-            {guardando ? "Guardando..." : "Guardar devolución"}
-          </button>
+            <Save className="w-3.5 h-3.5" />
+            Guardar devolucion
+          </Button>
         </div>
       </div>
     </div>

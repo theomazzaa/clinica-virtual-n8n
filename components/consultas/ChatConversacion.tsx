@@ -1,5 +1,10 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
+import { User, ArrowUp, MessageSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
+import EmptyState from "@/components/ui/EmptyState";
+
 type Mensaje = {
   id: string;
   rol: string;
@@ -10,55 +15,94 @@ type Mensaje = {
 
 function formatHora(d: string | null) {
   if (!d) return "";
-  return new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Buenos_Aires" });
+  return new Date(d).toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Buenos_Aires",
+  });
 }
 
-export default function ChatConversacion({ mensajes }: { mensajes: Mensaje[] }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] flex flex-col h-[60vh] md:h-[calc(100vh-220px)]">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-[#E2E8F0]">
-        <h2 className="font-semibold text-[#1E293B]">
-          Conversación{" "}
-          <span className="text-[#64748B] font-normal text-sm">({mensajes.length} mensajes)</span>
-        </h2>
-      </div>
+export default function ChatConversacion({
+  mensajes,
+  className,
+}: {
+  mensajes: Mensaje[];
+  className?: string;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
-      {/* Mensajes */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function handleScroll() {
+      setShowScrollTop((el?.scrollTop ?? 0) > 300);
+    }
+
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  function scrollToTop() {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  return (
+    <div className={cn("bg-surface rounded-[var(--radius-lg)] border border-border shadow-sm flex flex-col h-[60vh] lg:h-[calc(100vh-280px)] relative", className)}>
+      {/* Messages */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
+      >
         {mensajes.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-[#64748B] text-sm text-center px-4">
-            Los mensajes de esta consulta no están disponibles aún
+          <div className="flex items-center justify-center h-full">
+            <EmptyState
+              icon={MessageSquare}
+              title="Sin mensajes"
+              description="Los mensajes de esta consulta no estan disponibles aun"
+            />
           </div>
         ) : (
           mensajes.map((m) => {
             const esAgente = m.rol === "agente";
             return (
-              <div key={m.id} className={`flex ${esAgente ? "justify-end" : "justify-start"} gap-2`}>
+              <div
+                key={m.id}
+                className={cn("flex gap-2", esAgente ? "justify-end" : "justify-start")}
+              >
                 {!esAgente && (
-                  <div className="w-7 h-7 rounded-full bg-[#E2E8F0] flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="w-4 h-4 text-[#64748B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                  <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-1">
+                    <User className="w-3.5 h-3.5 text-text-muted" />
                   </div>
                 )}
                 <div className="max-w-[80%]">
                   <div
-                    className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                    className={cn(
+                      "px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed",
                       esAgente
-                        ? "bg-[#2563EB] text-white rounded-tr-sm"
-                        : "bg-[#F1F5F9] text-[#1E293B] rounded-tl-sm"
-                    }`}
+                        ? "bg-primary-600 text-white rounded-tr-md"
+                        : "bg-gray-100 text-text-primary rounded-tl-md"
+                    )}
                   >
                     {m.contenido}
                   </div>
-                  <p className={`text-xs text-[#94A3B8] mt-1 px-1 ${esAgente ? "text-right" : ""}`}>
+                  <p
+                    className={cn(
+                      "text-[11px] text-text-muted mt-1 px-1",
+                      esAgente && "text-right"
+                    )}
+                  >
                     {formatHora(m.created_at)}
                   </p>
                 </div>
                 {esAgente && (
-                  <div className="w-7 h-7 rounded-full bg-[#EFF6FF] flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
-                    <img src="/logo_docagent.png" alt="Bot" className="w-6 h-6 object-contain mix-blend-multiply" />
+                  <div className="w-7 h-7 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
+                    <img
+                      src="/logo_docagent.png"
+                      alt="IA"
+                      className="w-5 h-5 object-contain mix-blend-multiply"
+                    />
                   </div>
                 )}
               </div>
@@ -66,6 +110,17 @@ export default function ChatConversacion({ mensajes }: { mensajes: Mensaje[] }) 
           })
         )}
       </div>
+
+      {/* Scroll to top */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="absolute bottom-4 right-4 w-8 h-8 bg-surface border border-border rounded-full shadow-md flex items-center justify-center text-text-muted hover:text-text-primary transition-all hover:shadow-lg focus-ring"
+          aria-label="Ir al inicio"
+        >
+          <ArrowUp className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }
