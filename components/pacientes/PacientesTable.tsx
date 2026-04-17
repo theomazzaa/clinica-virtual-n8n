@@ -2,7 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  Eye,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  SearchX,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
+import Tooltip from "@/components/ui/Tooltip";
+import { Switch } from "@/components/ui/Checkbox";
+import EmptyState from "@/components/ui/EmptyState";
+import Button from "@/components/ui/Button";
 
 type Paciente = {
   id: string;
@@ -33,22 +49,14 @@ function formatFecha(d: string | null) {
   });
 }
 
-const avatarColors = [
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-green-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-teal-500",
-];
-
-function getAvatarColor(name: string) {
-  return avatarColors[name.charCodeAt(0) % avatarColors.length];
-}
-
 const POR_PAGINA = 10;
 
-export default function PacientesTable({ pacientes }: { pacientes: Paciente[] }) {
+export default function PacientesTable({
+  pacientes,
+}: {
+  pacientes: Paciente[];
+}) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filtroPrepaga, setFiltroPrepaga] = useState("");
   const [soloUrgentes, setSoloUrgentes] = useState(false);
@@ -65,12 +73,16 @@ export default function PacientesTable({ pacientes }: { pacientes: Paciente[] })
       (p.dni ?? "").includes(search);
     const matchPrepaga = !filtroPrepaga || p.prepaga === filtroPrepaga;
     const matchUrgente =
-      !soloUrgentes || p.consultas.some((c) => c.alarma && c.estado === "en_curso");
+      !soloUrgentes ||
+      p.consultas.some((c) => c.alarma && c.estado === "en_curso");
     return matchSearch && matchPrepaga && matchUrgente;
   });
 
   const totalPaginas = Math.ceil(filtered.length / POR_PAGINA);
-  const paginados = filtered.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
+  const paginados = filtered.slice(
+    pagina * POR_PAGINA,
+    (pagina + 1) * POR_PAGINA
+  );
   const inicio = pagina * POR_PAGINA + 1;
   const fin = Math.min((pagina + 1) * POR_PAGINA, filtered.length);
 
@@ -78,7 +90,6 @@ export default function PacientesTable({ pacientes }: { pacientes: Paciente[] })
     setPagina(Math.max(0, Math.min(nueva, totalPaginas - 1)));
   }
 
-  // Reset pagination when filters change
   function handleSearch(v: string) {
     setSearch(v);
     setPagina(0);
@@ -92,210 +103,263 @@ export default function PacientesTable({ pacientes }: { pacientes: Paciente[] })
     setPagina(0);
   }
 
+  function clearFilters() {
+    setSearch("");
+    setFiltroPrepaga("");
+    setSoloUrgentes(false);
+    setPagina(0);
+  }
+
+  const hasActiveFilters = search || filtroPrepaga || soloUrgentes;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0]">
-      {/* Filtros */}
-      <div className="px-4 md:px-6 py-4 border-b border-[#E2E8F0] flex gap-3 flex-wrap items-center">
-        <input
-          type="text"
-          placeholder="Buscar por nombre, apellido o DNI..."
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="flex-1 min-w-0 px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-        />
-        <select
-          value={filtroPrepaga}
-          onChange={(e) => handlePrepaga(e.target.value)}
-          className="px-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-[#64748B] w-full sm:w-auto"
-        >
-          <option value="">Todas las prepagas</option>
-          {prepagas.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
-        <label className="flex items-center gap-2 cursor-pointer text-sm text-[#64748B] whitespace-nowrap">
-          <input
-            type="checkbox"
+    <div className="bg-surface rounded-[var(--radius-lg)] border border-border shadow-sm">
+      {/* Filters */}
+      <div className="px-4 md:px-6 py-4 border-b border-border">
+        <div className="flex gap-3 flex-wrap items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, apellido o DNI..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              className={cn(
+                "w-full h-9 pl-9 pr-3 text-sm bg-surface border rounded-[var(--radius-sm)]",
+                "placeholder:text-text-muted text-text-primary",
+                "transition-all duration-150",
+                "focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-0 focus:border-primary-600",
+                "border-border hover:border-border-strong"
+              )}
+            />
+          </div>
+
+          {/* Prepaga select */}
+          <div className="relative">
+            <select
+              value={filtroPrepaga}
+              onChange={(e) => handlePrepaga(e.target.value)}
+              className={cn(
+                "h-9 pl-3 pr-8 text-sm bg-surface border rounded-[var(--radius-sm)] appearance-none",
+                "text-text-secondary",
+                "transition-all duration-150",
+                "focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-0 focus:border-primary-600",
+                "border-border hover:border-border-strong",
+                filtroPrepaga && "border-primary-300 bg-primary-50 text-primary-700"
+              )}
+            >
+              <option value="">Todas las prepagas</option>
+              {prepagas.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none rotate-90" />
+          </div>
+
+          {/* Urgentes switch */}
+          <Switch
             checked={soloUrgentes}
-            onChange={(e) => handleUrgentes(e.target.checked)}
-            className="w-4 h-4 accent-[#EF4444] rounded"
+            onChange={handleUrgentes}
+            label="Solo urgentes"
           />
-          Solo urgentes
-        </label>
+        </div>
+
+        {/* Results count */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 mt-3 text-xs text-text-muted">
+            <span>
+              Mostrando {filtered.length} de {pacientes.length} pacientes
+            </span>
+            <button
+              onClick={clearFilters}
+              className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Mobile: Card list */}
-      <div className="md:hidden divide-y divide-[#E2E8F0]">
+      {/* Mobile: Cards */}
+      <div className="md:hidden divide-y divide-border">
         {paginados.length === 0 ? (
-          <div className="px-4 py-12 text-center text-[#64748B]">
-            No se encontraron pacientes
-          </div>
+          <MobileEmpty search={search} onClear={clearFilters} total={pacientes.length} />
         ) : (
           paginados.map((p) => {
             const fullName = `${p.nombre} ${p.apellido ?? ""}`.trim();
             const ultimaConsulta = p.consultas[0];
             const docUrl = ultimaConsulta?.informe?.google_doc_url ?? null;
+            const esUrgente =
+              ultimaConsulta?.alarma && ultimaConsulta?.estado === "en_curso";
+
             return (
-              <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#F8FAFC] transition-colors">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 ${getAvatarColor(fullName)}`}
-                >
-                  {p.nombre[0]?.toUpperCase() ?? "P"}
-                </div>
+              <Link
+                key={p.id}
+                href={`/pacientes/${p.id}`}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-surface-secondary transition-colors"
+              >
+                <Avatar name={fullName} size="md" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-[#1E293B] truncate">{fullName}</p>
-                  <p className="text-xs text-[#64748B] mt-0.5">
+                  <p className="font-medium text-text-primary text-sm truncate">
+                    {fullName}
+                  </p>
+                  <p className="text-[11px] text-text-muted mt-0.5">
                     {p.dni ? `DNI ${p.dni}` : "Sin DNI"}
                     {p.prepaga ? ` · ${p.prepaga}` : ""}
                   </p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {ultimaConsulta && (
-                      <Badge variant={ultimaConsulta.estado} />
-                    )}
-                    {ultimaConsulta?.alarma && ultimaConsulta.estado === "en_curso" && (
+                    {esUrgente ? (
                       <Badge variant="urgente" />
-                    )}
-                    <span className="text-xs text-[#94A3B8]">
-                      {ultimaConsulta ? formatFecha(ultimaConsulta.created_at) : "Sin consultas"}
+                    ) : ultimaConsulta ? (
+                      <Badge variant={ultimaConsulta.estado} />
+                    ) : null}
+                    <span className="text-[11px] text-text-muted">
+                      {ultimaConsulta
+                        ? formatFecha(ultimaConsulta.created_at)
+                        : "Sin consultas"}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {docUrl ? (
-                    <a
-                      href={docUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Ver informe"
-                      className="p-1.5 text-[#64748B] hover:text-[#2563EB] hover:bg-[#EFF6FF] rounded-lg transition-colors"
+                  {docUrl && (
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(docUrl, "_blank");
+                      }}
+                      className="p-1.5 text-text-muted hover:text-primary-600 hover:bg-primary-50 rounded-[var(--radius-sm)] transition-colors"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </a>
-                  ) : null}
-                  <Link
-                    href={`/pacientes/${p.id}`}
-                    title="Ver paciente"
-                    className="p-1.5 text-[#64748B] hover:text-[#2563EB] hover:bg-[#EFF6FF] rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                      <FileText className="w-4 h-4" />
+                    </span>
+                  )}
+                  <ChevronRight className="w-4 h-4 text-text-muted" />
                 </div>
-              </div>
+              </Link>
             );
           })
         )}
       </div>
 
-      {/* Desktop: Tabla */}
+      {/* Desktop: Table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#E2E8F0] text-[#64748B] text-left">
-              <th className="px-6 py-3 font-medium">Paciente</th>
-              <th className="px-6 py-3 font-medium">DNI</th>
-              <th className="px-6 py-3 font-medium">Última consulta</th>
-              <th className="px-6 py-3 font-medium">Estado</th>
-              <th className="px-6 py-3 font-medium text-right">Acciones</th>
+            <tr className="border-b border-border">
+              <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                Paciente
+              </th>
+              <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                DNI
+              </th>
+              <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                Ultima consulta
+              </th>
+              <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                Estado
+              </th>
+              <th className="px-6 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody>
             {paginados.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-[#64748B]">
-                  No se encontraron pacientes
+                <td colSpan={5}>
+                  <DesktopEmpty search={search} onClear={clearFilters} total={pacientes.length} />
                 </td>
               </tr>
             ) : (
               paginados.map((p) => {
-                const fullName = `${p.nombre} ${p.apellido ?? ""}`.trim();
+                const fullName =
+                  `${p.nombre} ${p.apellido ?? ""}`.trim();
                 const ultimaConsulta = p.consultas[0];
-                const docUrl = ultimaConsulta?.informe?.google_doc_url ?? null;
-                const esUrgente = ultimaConsulta?.alarma && ultimaConsulta?.estado === "en_curso";
+                const docUrl =
+                  ultimaConsulta?.informe?.google_doc_url ?? null;
+                const esUrgente =
+                  ultimaConsulta?.alarma &&
+                  ultimaConsulta?.estado === "en_curso";
+
                 return (
-                  <tr key={p.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors">
-                    {/* Avatar + Nombre */}
-                    <td className="px-6 py-4">
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push(`/pacientes/${p.id}`)}
+                    className="border-b border-border hover:bg-surface-secondary transition-colors cursor-pointer"
+                  >
+                    <td className="px-6 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 text-sm ${getAvatarColor(fullName)}`}
-                        >
-                          {p.nombre[0]?.toUpperCase() ?? "P"}
-                        </div>
+                        <Avatar name={fullName} size="sm" />
                         <div>
-                          <p className="font-medium text-[#1E293B]">{fullName}</p>
-                          <p className="text-xs text-[#94A3B8]">
-                            {p._count.consultas} consulta{p._count.consultas !== 1 ? "s" : ""}
+                          <p className="font-medium text-text-primary">
+                            {fullName}
+                          </p>
+                          <p className="text-[11px] text-text-muted mt-0.5">
+                            {p._count.consultas} consulta
+                            {p._count.consultas !== 1 ? "s" : ""}
                             {p.prepaga ? ` · ${p.prepaga}` : ""}
                           </p>
                         </div>
                       </div>
                     </td>
-                    {/* DNI */}
-                    <td className="px-6 py-4 text-[#64748B]">{p.dni ?? "-"}</td>
-                    {/* Última consulta */}
-                    <td className="px-6 py-4 text-[#64748B]">
-                      {ultimaConsulta ? formatFecha(ultimaConsulta.created_at) : "-"}
+                    <td className="px-6 py-3.5 text-text-secondary">
+                      {p.dni ?? "-"}
                     </td>
-                    {/* Estado */}
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3.5 text-text-secondary">
+                      {ultimaConsulta
+                        ? formatFecha(ultimaConsulta.created_at)
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-3.5">
                       {esUrgente ? (
                         <Badge variant="urgente" />
                       ) : ultimaConsulta ? (
                         <Badge variant={ultimaConsulta.estado} />
                       ) : (
-                        <span className="text-[#94A3B8] text-xs">Sin consultas</span>
+                        <span className="text-[11px] text-text-muted">
+                          Sin consultas
+                        </span>
                       )}
                     </td>
-                    {/* Acciones */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        {/* Ver paciente */}
-                        <Link
-                          href={`/pacientes/${p.id}`}
-                          title="Ver ficha"
-                          className="p-2 text-[#64748B] hover:text-[#2563EB] hover:bg-[#EFF6FF] rounded-lg transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </Link>
-                        {/* Ver informe */}
-                        {docUrl ? (
-                          <a
-                            href={docUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Ver informe"
-                            className="p-2 text-[#64748B] hover:text-[#2563EB] hover:bg-[#EFF6FF] rounded-lg transition-colors"
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Tooltip content="Ver ficha">
+                          <Link
+                            href={`/pacientes/${p.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-2 text-text-muted hover:text-primary-600 hover:bg-primary-50 rounded-[var(--radius-sm)] transition-colors focus-ring"
+                            aria-label="Ver ficha"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </a>
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        </Tooltip>
+
+                        {docUrl ? (
+                          <Tooltip content="Ver informe">
+                            <a
+                              href={docUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 text-text-muted hover:text-primary-600 hover:bg-primary-50 rounded-[var(--radius-sm)] transition-colors focus-ring"
+                              aria-label="Ver informe"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </a>
+                          </Tooltip>
                         ) : (
-                          <span title="Sin informe" className="p-2 text-[#CBD5E1] opacity-40 cursor-not-allowed">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </span>
+                          <Tooltip content="Sin informe">
+                            <span
+                              className="p-2 text-text-muted opacity-30 cursor-not-allowed"
+                              aria-label="Sin informe"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </span>
+                          </Tooltip>
                         )}
-                        {/* Enviar mensaje — próximamente */}
-                        <span title="Próximamente" className="p-2 text-[#CBD5E1] opacity-40 cursor-not-allowed">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                        </span>
                       </div>
                     </td>
                   </tr>
@@ -306,33 +370,109 @@ export default function PacientesTable({ pacientes }: { pacientes: Paciente[] })
         </table>
       </div>
 
-      {/* Paginación */}
+      {/* Pagination */}
       {filtered.length > POR_PAGINA && (
-        <div className="px-4 md:px-6 py-4 border-t border-[#E2E8F0] flex items-center justify-between text-sm">
-          <span className="text-[#64748B]">
+        <div className="px-4 md:px-6 py-3 border-t border-border flex items-center justify-between text-sm">
+          <span className="text-text-muted text-xs">
             Mostrando {inicio}–{fin} de {filtered.length}
           </span>
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => cambiarPagina(pagina - 1)}
               disabled={pagina === 0}
-              className="px-3 py-1.5 border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Anterior
-            </button>
-            <span className="text-[#64748B]">
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-xs text-text-muted px-2">
               {pagina + 1} / {totalPaginas}
             </span>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => cambiarPagina(pagina + 1)}
               disabled={pagina >= totalPaginas - 1}
-              className="px-3 py-1.5 border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Siguiente
-            </button>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+/* ─── Empty States ─── */
+
+function MobileEmpty({
+  search,
+  onClear,
+  total,
+}: {
+  search: string;
+  onClear: () => void;
+  total: number;
+}) {
+  if (total === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Sin pacientes"
+        description="Aun no hay pacientes registrados"
+      />
+    );
+  }
+  return (
+    <EmptyState
+      icon={SearchX}
+      title="Sin resultados"
+      description={
+        search
+          ? `No encontramos pacientes que coincidan con "${search}"`
+          : "No hay pacientes con los filtros seleccionados"
+      }
+      action={
+        <Button variant="secondary" size="sm" onClick={onClear}>
+          Limpiar filtros
+        </Button>
+      }
+    />
+  );
+}
+
+function DesktopEmpty({
+  search,
+  onClear,
+  total,
+}: {
+  search: string;
+  onClear: () => void;
+  total: number;
+}) {
+  if (total === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Sin pacientes"
+        description="Aun no hay pacientes registrados"
+      />
+    );
+  }
+  return (
+    <EmptyState
+      icon={SearchX}
+      title="Sin resultados"
+      description={
+        search
+          ? `No encontramos pacientes que coincidan con "${search}"`
+          : "No hay pacientes con los filtros seleccionados"
+      }
+      action={
+        <Button variant="secondary" size="sm" onClick={onClear}>
+          Limpiar filtros
+        </Button>
+      }
+    />
   );
 }

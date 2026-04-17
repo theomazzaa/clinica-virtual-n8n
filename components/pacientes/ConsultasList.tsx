@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ChevronRight, ClipboardList } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
+import Tooltip from "@/components/ui/Tooltip";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Consulta = {
   id: string;
@@ -26,8 +30,14 @@ function formatFecha(d: string | null) {
   });
 }
 
-export default function ConsultasList({ consultas }: { consultas: Consulta[] }) {
-  const [estadosLocales, setEstadosLocales] = useState<Map<string, string>>(new Map());
+export default function ConsultasList({
+  consultas,
+}: {
+  consultas: Consulta[];
+}) {
+  const [estadosLocales, setEstadosLocales] = useState<Map<string, string>>(
+    new Map()
+  );
 
   function getEstado(c: Consulta) {
     return estadosLocales.get(c.id) ?? c.estado;
@@ -35,7 +45,6 @@ export default function ConsultasList({ consultas }: { consultas: Consulta[] }) 
 
   async function toggleFinalizada(c: Consulta, checked: boolean) {
     const nuevoEstado = checked ? "finalizada" : "en_curso";
-    // Optimistic update
     setEstadosLocales((prev) => new Map(prev).set(c.id, nuevoEstado));
 
     try {
@@ -44,9 +53,8 @@ export default function ConsultasList({ consultas }: { consultas: Consulta[] }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
-      if (!res.ok) throw new Error("Error al actualizar");
+      if (!res.ok) throw new Error();
     } catch {
-      // Revert on error
       setEstadosLocales((prev) => {
         const next = new Map(prev);
         next.set(c.id, c.estado);
@@ -57,9 +65,11 @@ export default function ConsultasList({ consultas }: { consultas: Consulta[] }) 
 
   if (consultas.length === 0) {
     return (
-      <div className="text-center py-8 text-[#64748B] text-sm">
-        No hay consultas registradas
-      </div>
+      <EmptyState
+        icon={ClipboardList}
+        title="Sin consultas"
+        description="No hay consultas registradas para este paciente"
+      />
     );
   }
 
@@ -71,53 +81,65 @@ export default function ConsultasList({ consultas }: { consultas: Consulta[] }) 
         return (
           <div
             key={c.id}
-            className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
+            className={cn(
+              "flex items-start gap-3 p-3 rounded-[var(--radius-md)] border transition-all duration-200",
               esFinalizada
-                ? "border-[#E2E8F0] bg-[#F8FAFC] opacity-70"
+                ? "border-border bg-surface-secondary opacity-70"
                 : c.alarma
-                ? "border-red-200 bg-[#FEF2F2]"
-                : "border-[#E2E8F0] bg-white"
-            }`}
+                  ? "border-danger-500/20 bg-danger-50/30"
+                  : "border-border bg-surface"
+            )}
           >
-            {/* Checkbox finalizar */}
+            {/* Checkbox */}
             <div className="flex-shrink-0 pt-0.5">
               <input
                 type="checkbox"
                 checked={esFinalizada}
                 onChange={(e) => toggleFinalizada(c, e.target.checked)}
-                title={esFinalizada ? "Marcar como en curso" : "Marcar como finalizada"}
-                className="w-4 h-4 accent-[#22C55E] rounded cursor-pointer"
+                title={
+                  esFinalizada
+                    ? "Marcar como en curso"
+                    : "Marcar como finalizada"
+                }
+                className="w-4 h-4 rounded border-border text-success-600 focus:ring-2 focus:ring-primary-600 focus:ring-offset-0 cursor-pointer"
               />
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <Badge variant={c.alarma && estado === "en_curso" ? "urgente" : estado} />
+                <Badge
+                  variant={
+                    c.alarma && estado === "en_curso" ? "urgente" : estado
+                  }
+                />
                 {c.sistema && (
-                  <span className="text-xs text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] text-text-muted bg-surface-secondary px-1.5 py-0.5 rounded border border-border">
                     {c.sistema}
                   </span>
                 )}
               </div>
               <p
-                className={`text-sm text-[#1E293B] transition-all duration-300 ${
-                  esFinalizada ? "line-through text-[#94A3B8]" : ""
-                }`}
+                className={cn(
+                  "text-sm text-text-primary transition-all duration-200",
+                  esFinalizada && "line-through text-text-muted"
+                )}
               >
                 {c.motivo ?? "Sin motivo registrado"}
               </p>
-              <p className="text-xs text-[#94A3B8] mt-1">{formatFecha(c.created_at)}</p>
+              <p className="text-[11px] text-text-muted mt-1">
+                {formatFecha(c.created_at)}
+              </p>
             </div>
 
-            <Link
-              href={`/consultas/${c.id}`}
-              className="flex-shrink-0 p-1.5 text-[#94A3B8] hover:text-[#2563EB] hover:bg-[#EFF6FF] rounded-lg transition-colors"
-              title="Ver detalle"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
+            <Tooltip content="Ver detalle">
+              <Link
+                href={`/consultas/${c.id}`}
+                className="flex-shrink-0 p-1.5 text-text-muted hover:text-primary-600 hover:bg-primary-50 rounded-[var(--radius-sm)] transition-colors focus-ring"
+                aria-label="Ver detalle"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </Tooltip>
           </div>
         );
       })}

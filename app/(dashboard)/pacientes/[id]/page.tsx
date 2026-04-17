@@ -5,12 +5,18 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ConsultasList from "@/components/pacientes/ConsultasList";
+import Avatar from "@/components/ui/Avatar";
+import { ChevronLeft } from "lucide-react";
 
 function formatFecha(d: Date | null) {
   if (!d) return "-";
-  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Buenos_Aires" });
+  return d.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "America/Buenos_Aires",
+  });
 }
-
 
 async function getPaciente(id: string, medicoId: string) {
   return prisma.pacientes.findFirst({
@@ -19,8 +25,13 @@ async function getPaciente(id: string, medicoId: string) {
       consultas: {
         orderBy: { created_at: "desc" },
         select: {
-          id: true, sistema: true, motivo: true, estado: true,
-          alarma: true, created_at: true, finalizada_at: true,
+          id: true,
+          sistema: true,
+          motivo: true,
+          estado: true,
+          alarma: true,
+          created_at: true,
+          finalizada_at: true,
         },
       },
     },
@@ -39,6 +50,8 @@ export default async function FichaPacientePage({
   const paciente = await getPaciente(id, session.user.id).catch(() => null);
   if (!paciente) notFound();
 
+  const fullName = `${paciente.nombre} ${paciente.apellido ?? ""}`.trim();
+
   const consultasSerializadas = paciente.consultas.map((c) => ({
     ...c,
     created_at: c.created_at ? c.created_at.toISOString() : null,
@@ -47,9 +60,12 @@ export default async function FichaPacientePage({
 
   const campos = [
     { label: "DNI", value: paciente.dni },
-    { label: "Edad", value: paciente.edad ? `${paciente.edad} años` : null },
+    { label: "Edad", value: paciente.edad ? `${paciente.edad} anos` : null },
     { label: "Sexo", value: paciente.sexo },
-    { label: "Fecha de nacimiento", value: formatFecha(paciente.fecha_nacimiento) },
+    {
+      label: "Fecha de nacimiento",
+      value: formatFecha(paciente.fecha_nacimiento),
+    },
     { label: "Celular", value: paciente.celular },
     { label: "Email", value: paciente.email },
     { label: "Domicilio", value: paciente.domicilio },
@@ -61,26 +77,21 @@ export default async function FichaPacientePage({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+      <div className="flex items-center gap-3 mb-6 md:mb-8">
         <Link
           href="/pacientes"
-          className="text-[#64748B] hover:text-[#1E293B] transition-colors flex-shrink-0"
+          className="text-text-muted hover:text-text-primary transition-colors flex-shrink-0 focus-ring rounded-[var(--radius-sm)] p-0.5"
+          aria-label="Volver a pacientes"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <ChevronLeft className="w-5 h-5" />
         </Link>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
-            <span className="text-[#2563EB] font-bold text-base md:text-lg">
-              {paciente.nombre[0]?.toUpperCase() ?? "P"}
-            </span>
-          </div>
+          <Avatar name={fullName} size="lg" />
           <div className="min-w-0">
-            <h1 className="text-lg md:text-2xl font-bold text-[#1E293B] truncate">
-              {paciente.nombre} {paciente.apellido ?? ""}
+            <h1 className="text-lg md:text-2xl font-bold text-text-primary truncate">
+              {fullName}
             </h1>
-            <p className="text-[#64748B] text-xs md:text-sm mt-0.5">
+            <p className="text-text-muted text-xs md:text-sm mt-0.5">
               Paciente desde {formatFecha(paciente.created_at)}
             </p>
           </div>
@@ -89,22 +100,28 @@ export default async function FichaPacientePage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Datos personales */}
-        <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-6">
-          <h2 className="font-semibold text-[#1E293B] mb-4">Datos personales</h2>
+        <div className="bg-surface rounded-[var(--radius-lg)] border border-border shadow-sm p-6">
+          <h2 className="font-semibold text-text-primary text-[15px] mb-4">
+            Datos personales
+          </h2>
           <dl className="space-y-3">
             {campos.map(({ label, value }) => (
               <div key={label}>
-                <dt className="text-xs text-[#64748B] uppercase tracking-wide">{label}</dt>
-                <dd className="text-sm text-[#1E293B] mt-0.5">{value || "-"}</dd>
+                <dt className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                  {label}
+                </dt>
+                <dd className="text-sm text-text-primary mt-0.5">
+                  {value || "-"}
+                </dd>
               </div>
             ))}
           </dl>
         </div>
 
         {/* Historial de consultas */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-[#E2E8F0]">
-          <div className="px-6 py-4 border-b border-[#E2E8F0]">
-            <h2 className="font-semibold text-[#1E293B]">
+        <div className="lg:col-span-2 bg-surface rounded-[var(--radius-lg)] border border-border shadow-sm">
+          <div className="px-6 py-4 border-b border-border">
+            <h2 className="font-semibold text-text-primary text-[15px]">
               Historial de consultas ({paciente.consultas.length})
             </h2>
           </div>
