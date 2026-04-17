@@ -2,6 +2,12 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  CalendarDays,
+  BarChart3,
+  ClipboardList,
+  AlertTriangle,
+} from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import MetricCard from "@/components/dashboard/MetricCard";
@@ -29,7 +35,11 @@ type ConsultaReciente = {
   dentro_cobertura: boolean | null;
   devolucion_medico: string | null;
   devolucion_at: Date | null;
-  paciente: { nombre: string; apellido: string | null; celular: string | null } | null;
+  paciente: {
+    nombre: string;
+    apellido: string | null;
+    celular: string | null;
+  } | null;
 };
 
 async function getDashboardData(medicoId: string) {
@@ -47,25 +57,44 @@ async function getDashboardData(medicoId: string) {
     consultasSemana,
     consultasMes,
     urgencias,
-    totalConsultas,
+    totalPacientes,
     recientes,
   ] = await Promise.all([
-    prisma.consultas.count({ where: { medico_id: medicoId, created_at: { gte: hoy } } }),
-    prisma.consultas.count({ where: { medico_id: medicoId, created_at: { gte: inicioSemana } } }),
-    prisma.consultas.count({ where: { medico_id: medicoId, created_at: { gte: inicioMes } } }),
-    prisma.consultas.count({ where: { medico_id: medicoId, alarma: true, estado: "en_curso" } }),
-    prisma.consultas.count({ where: { medico_id: medicoId } }),
+    prisma.consultas.count({
+      where: { medico_id: medicoId, created_at: { gte: hoy } },
+    }),
+    prisma.consultas.count({
+      where: { medico_id: medicoId, created_at: { gte: inicioSemana } },
+    }),
+    prisma.consultas.count({
+      where: { medico_id: medicoId, created_at: { gte: inicioMes } },
+    }),
+    prisma.consultas.count({
+      where: { medico_id: medicoId, alarma: true, estado: "en_curso" },
+    }),
+    prisma.pacientes.count({
+      where: { medico_id: medicoId },
+    }),
     prisma.consultas.findMany({
       where: { medico_id: medicoId },
       orderBy: { created_at: "desc" },
-      take: 10,
+      take: 5,
       include: {
-        paciente: { select: { nombre: true, apellido: true, celular: true } },
+        paciente: {
+          select: { nombre: true, apellido: true, celular: true },
+        },
       },
     }),
   ]);
 
-  return { consultasHoy, consultasSemana, consultasMes, urgencias, totalConsultas, recientes };
+  return {
+    consultasHoy,
+    consultasSemana,
+    consultasMes,
+    urgencias,
+    totalPacientes,
+    recientes,
+  };
 }
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
@@ -75,16 +104,29 @@ const defaultData: DashboardData = {
   consultasSemana: 0,
   consultasMes: 0,
   urgencias: 0,
-  totalConsultas: 0,
+  totalPacientes: 0,
   recientes: [],
 };
+
+function formatFechaHoy() {
+  return new Date().toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
   const medicoId = session.user.id;
-  const nombreMedico = (session.user as { nombre?: string }).nombre ?? session.user.name ?? "Doctor";
+  const nombreMedico =
+    (session.user as { nombre?: string }).nombre ??
+    session.user.name ??
+    "Doctor";
 
   let data: DashboardData = defaultData;
   try {
@@ -93,7 +135,14 @@ export default async function DashboardPage() {
     data = defaultData;
   }
 
-  const { consultasHoy, consultasSemana, consultasMes, urgencias, totalConsultas, recientes } = data;
+  const {
+    consultasHoy,
+    consultasSemana,
+    consultasMes,
+    urgencias,
+    totalPacientes,
+    recientes,
+  } = data;
 
   const recientesSerializados = recientes.map((c: ConsultaReciente) => ({
     ...c,
@@ -109,76 +158,70 @@ export default async function DashboardPage() {
     <div>
       {/* Header */}
       <div className="mb-6 md:mb-8">
-        <h1 className="text-xl md:text-2xl font-bold text-[#1E293B]">Dashboard</h1>
-        <p className="text-sm md:text-base text-[#64748B] mt-1">Bienvenido, Dr. {nombreMedico}</p>
+        <h1 className="text-xl md:text-2xl font-bold text-text-primary">
+          Dashboard
+        </h1>
+        <p className="text-sm text-text-muted mt-1">
+          Bienvenido, Dr. {nombreMedico} — {formatFechaHoy()}
+        </p>
       </div>
 
-      {/* KPIs — 2×2 mobile, 4 columnas desktop */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-5">
         <MetricCard
           title="Hoy"
           value={consultasHoy}
           color="blue"
-          icon={
-            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
+          icon={<CalendarDays className="w-5 h-5" />}
         />
         <MetricCard
           title="Esta semana"
           value={consultasSemana}
           color="blue"
-          icon={
-            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          }
+          icon={<BarChart3 className="w-5 h-5" />}
         />
         <MetricCard
           title="Este mes"
           value={consultasMes}
           color="blue"
-          icon={
-            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          }
+          icon={<ClipboardList className="w-5 h-5" />}
         />
         <MetricCard
           title="Urgencias"
           value={urgencias}
           color="red"
           href="/alarmas"
-          icon={
-            <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd" />
-            </svg>
-          }
+          icon={<AlertTriangle className="w-5 h-5" />}
         />
       </div>
 
       {/* Tiempo ahorrado */}
-      <TiempoAhorradoCard totalConsultas={totalConsultas} />
+      <TiempoAhorradoCard totalPacientes={totalPacientes} />
 
-      {/* Gráfico de evolución */}
+      {/* Grafico de evolucion */}
       <DashboardChart />
 
       {/* Consultas recientes */}
-      <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0]">
-        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[#E2E8F0] flex items-center justify-between">
-          <h2 className="font-semibold text-[#1E293B] text-sm md:text-base">Consultas recientes</h2>
-          <Link href="/pacientes" className="text-xs md:text-sm text-[#2563EB] hover:underline font-medium">
-            Ver todos →
+      <div className="bg-surface rounded-[var(--radius-lg)] shadow-xs border border-border">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-border flex items-center justify-between">
+          <h2 className="font-semibold text-text-primary text-sm md:text-[15px]">
+            Consultas recientes
+          </h2>
+          <Link
+            href="/pacientes"
+            className="text-xs md:text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors focus-ring rounded-[var(--radius-sm)] px-1"
+          >
+            Ver todos
           </Link>
         </div>
         <div className="px-2 md:px-4 py-2">
-          <RecentPatients consultas={recientesSerializados as Parameters<typeof RecentPatients>[0]["consultas"]} />
+          <RecentPatients
+            consultas={
+              recientesSerializados as Parameters<
+                typeof RecentPatients
+              >[0]["consultas"]
+            }
+          />
         </div>
       </div>
     </div>

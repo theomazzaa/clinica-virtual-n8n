@@ -29,16 +29,21 @@ export default function DashboardChart() {
   }, []);
 
   if (loading) {
-    return <Skeleton className="h-[260px] w-full rounded-xl" />;
+    return (
+      <Skeleton className="h-[260px] w-full rounded-[var(--radius-lg)]" />
+    );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-4 md:p-6 mb-4 md:mb-6">
-      <h2 className="font-semibold text-[#1E293B] text-sm md:text-base mb-4">
-        Evolución de consultas (últimos 30 días)
+    <div className="bg-surface rounded-[var(--radius-lg)] shadow-xs border border-border p-4 md:p-6 mb-4 md:mb-5">
+      <h2 className="font-semibold text-text-primary text-sm md:text-[15px] mb-4">
+        Evolucion de consultas (ultimos 30 dias)
       </h2>
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+        >
           <defs>
             <linearGradient id="colorConsultas" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15} />
@@ -51,7 +56,9 @@ export default function DashboardChart() {
             tick={{ fontSize: 11, fill: "#94A3B8" }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(val, index) => (index % 5 === 0 ? val : "")}
+            tickFormatter={(val: string, index: number) =>
+              index % 5 === 0 ? val : ""
+            }
           />
           <YAxis
             tick={{ fontSize: 11, fill: "#94A3B8" }}
@@ -61,11 +68,12 @@ export default function DashboardChart() {
           />
           <Tooltip
             formatter={(value) => [`${value ?? 0} consultas`, "Total"]}
-            labelStyle={{ color: "#1E293B", fontWeight: 600 }}
+            labelStyle={{ color: "#0F172A", fontWeight: 600 }}
             contentStyle={{
-              borderRadius: "8px",
+              borderRadius: "var(--radius-md)",
               border: "1px solid #E2E8F0",
-              boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+              boxShadow: "var(--shadow-md)",
+              fontSize: "13px",
             }}
           />
           <Area
