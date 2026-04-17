@@ -4,50 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import {
+  LayoutDashboard,
+  Users,
+  AlertTriangle,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Avatar from "@/components/ui/Avatar";
 
 const navItems = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pacientes",
-    label: "Pacientes",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/alarmas",
-    label: "Alertas",
-    badge: true,
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/configuracion",
-    label: "Configuración",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
+  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { href: "/pacientes", label: "Pacientes", Icon: Users },
+  { href: "/alarmas", label: "Alertas", Icon: AlertTriangle, badge: true },
+  { href: "/configuracion", label: "Configuracion", Icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -56,9 +29,13 @@ export default function Sidebar() {
   const [alertasCount, setAlertasCount] = useState<number | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const nombre = (session?.user as { nombre?: string })?.nombre ?? session?.user?.name ?? "";
-  const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
-  const inicial = nombre ? nombre[0].toUpperCase() : "D";
+  const nombre =
+    (session?.user as { nombre?: string })?.nombre ??
+    session?.user?.name ??
+    "";
+  const apellido =
+    (session?.user as { apellido?: string })?.apellido ?? "";
+  const fullName = `${nombre} ${apellido}`.trim();
 
   useEffect(() => {
     fetch("/api/alertas/count")
@@ -74,33 +51,53 @@ export default function Sidebar() {
 
   const sidebarContent = (
     <>
-      {/* Logo DocAgent */}
-      <div className="px-6 py-5 border-b border-[#E2E8F0]">
-        <div className="flex flex-col items-center">
-          <img src="/logo_docagent.png" alt="DocAgent" className="w-32 h-32 object-contain mix-blend-multiply -mb-4" />
-          <span className="text-lg font-bold text-[#1E293B]">DocAgent</span>
-        </div>
-      </div>
+      {/* Logo — clickable → dashboard */}
+      <Link
+        href="/dashboard"
+        className="flex items-center gap-3 px-6 py-5 border-b border-border group focus-ring"
+      >
+        <img
+          src="/logo_docagent.png"
+          alt="DocAgent"
+          className="w-9 h-9 object-contain mix-blend-multiply flex-shrink-0"
+        />
+        <span className="text-lg font-bold text-text-primary group-hover:text-primary-600 transition-colors">
+          DocAgent
+        </span>
+      </Link>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={cn(
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-sm)] text-sm font-medium transition-all duration-150 focus-ring",
                 isActive
-                  ? "bg-[#EFF6FF] text-[#2563EB]"
-                  : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#1E293B]"
-              }`}
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-text-secondary hover:bg-gray-100 hover:text-text-primary"
+              )}
             >
-              {item.icon}
+              {/* Barra lateral azul activa */}
+              {isActive && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-primary-600 rounded-r-full" />
+              )}
+
+              <item.Icon
+                className={cn(
+                  "w-[18px] h-[18px] flex-shrink-0",
+                  isActive ? "text-primary-600" : ""
+                )}
+              />
               <span className="flex-1">{item.label}</span>
+
               {item.badge && alertasCount !== null && alertasCount > 0 && (
-                <span className="bg-[#EF4444] text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                <span className="bg-danger-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">
                   {alertasCount > 99 ? "99+" : alertasCount}
                 </span>
               )}
@@ -109,88 +106,83 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Info del doctor */}
+      {/* Footer: doctor info + logout */}
       {session?.user && (
-        <div className="px-4 py-3 border-t border-[#E2E8F0]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
-              <span className="text-[#2563EB] font-bold text-sm">{inicial}</span>
-            </div>
+        <div className="border-t border-border px-3 py-3">
+          <div className="flex items-center gap-3 px-1">
+            <Avatar name={fullName || "Doctor"} size="sm" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#1E293B] truncate">
-                Dr. {nombre} {apellido}
+              <p className="text-sm font-medium text-text-primary truncate">
+                Dr. {fullName}
               </p>
-              <p className="text-xs text-[#64748B] truncate">{session.user.email}</p>
+              <p className="text-[11px] text-text-muted truncate leading-none mt-0.5">
+                {session.user.email}
+              </p>
             </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              title="Cerrar sesion"
+              aria-label="Cerrar sesion"
+              className="p-1.5 text-text-muted hover:text-danger-600 rounded-[var(--radius-sm)] transition-colors focus-ring flex-shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
-
-      {/* Footer con cerrar sesión */}
-      <div className="px-4 py-3 border-t border-[#E2E8F0] flex items-center justify-between">
-        <p className="text-xs text-[#94A3B8]">DocAgent v2.0</p>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          title="Cerrar sesión"
-          className="flex items-center gap-1.5 text-xs text-[#64748B] hover:text-[#EF4444] transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Salir
-        </button>
-      </div>
     </>
   );
 
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-4 z-30">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center justify-between px-4 z-30">
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-2 -ml-2 text-[#64748B] hover:text-[#1E293B] transition-colors"
+          className="p-2 -ml-2 text-text-secondary hover:text-text-primary transition-colors focus-ring rounded-[var(--radius-sm)]"
+          aria-label="Abrir menu"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2">
-          <img src="/logo_docagent.png" alt="DocAgent" className="w-8 h-8 object-contain mix-blend-multiply" />
-          <span className="font-bold text-[#1E293B]">DocAgent</span>
-        </div>
-        <div className="w-10" /> {/* spacer for centering */}
+        <Link href="/dashboard" className="flex items-center gap-2 focus-ring rounded-[var(--radius-sm)]">
+          <img
+            src="/logo_docagent.png"
+            alt="DocAgent"
+            className="w-7 h-7 object-contain mix-blend-multiply"
+          />
+          <span className="font-bold text-text-primary text-sm">DocAgent</span>
+        </Link>
+        <div className="w-9" />
       </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          className="md:hidden fixed inset-0 bg-black/40 z-40 animate-[fadeIn_150ms_ease-in-out]"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Mobile sidebar (slide-in) */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-72 bg-white border-r border-[#E2E8F0] flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
+        className={cn(
+          "md:hidden fixed left-0 top-0 h-full w-72 bg-surface border-r border-border flex flex-col z-50 transform transition-transform duration-200 ease-in-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        )}
       >
         {/* Close button */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 p-1 text-[#64748B] hover:text-[#1E293B] transition-colors"
+          className="absolute top-4 right-4 p-1.5 text-text-muted hover:text-text-primary rounded-[var(--radius-sm)] transition-colors focus-ring"
+          aria-label="Cerrar menu"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-5 h-5" />
         </button>
         {sidebarContent}
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-white border-r border-[#E2E8F0] flex-col z-10">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface border-r border-border flex-col z-10">
         {sidebarContent}
       </aside>
     </>
