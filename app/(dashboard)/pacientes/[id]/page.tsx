@@ -56,6 +56,8 @@ export default async function FichaPacientePage({
     ...c,
     created_at: c.created_at ? c.created_at.toISOString() : null,
     finalizada_at: c.finalizada_at ? c.finalizada_at.toISOString() : null,
+    estado: c.estado ?? "en_curso",
+    alarma: c.alarma ?? false,
   }));
 
   const campos = [

@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -7,129 +8,206 @@ datasource db {
 }
 
 model medicos {
-  id                 String          @id @default(uuid()) @db.Uuid
-  nombre             String          @db.VarChar(100)
-  apellido           String          @db.VarChar(100)
-  matricula_nacional String          @unique @db.VarChar(20)
-  especialidad       String?         @db.VarChar(100)
-  email              String          @unique @db.VarChar(150)
-  telefono           String?         @db.VarChar(30)
-  formacion          String?
-  experiencia        String?
-  zonas_cobertura    Json            @default("[]")
-  system_prompt      String?
-  activo             Boolean         @default(true)
-  password_hash      String?
-  created_at         DateTime?       @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?       @updatedAt @db.Timestamp(6)
-  pacientes          pacientes[]
-  consultas          consultas[]
-  suscripciones      suscripciones[]
+  id                    String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nombre                String             @db.VarChar(100)
+  apellido              String             @db.VarChar(100)
+  matricula_nacional    String             @unique @db.VarChar(20)
+  especialidad          String?            @db.VarChar(100)
+  email                 String             @unique @db.VarChar(150)
+  telefono              String?            @db.VarChar(30)
+  formacion             String?
+  experiencia           String?
+  zonas_cobertura       Json?              @default("[]")
+  system_prompt         String?
+  activo                Boolean?           @default(true)
+  created_at            DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?          @default(now()) @updatedAt @db.Timestamp(6)
+  password_hash         String?
+  mp_access_token       String?
+  mp_refresh_token      String?
+  mp_user_id            String?            @db.VarChar(50)
+  telefono_consultorio  String?            @db.VarChar(30)
+  direccion_consultorio String?
+  slug                  String?            @unique(map: "idx_medicos_slug") @db.VarChar(50)
+  telefono_whatsapp     String             @unique(map: "medicos_telefono_whatsapp_unique") @db.VarChar(30)
+  consultas             consultas[]
+  holds                 holds[]
+  horarios_medicos      horarios_medicos[]
+  pacientes             pacientes[]
+  suscripciones         suscripciones[]
+
+  @@index([telefono_whatsapp], map: "idx_medicos_telefono_whatsapp")
 }
 
 model pacientes {
-  id              String      @id @default(uuid()) @db.Uuid
-  medico_id       String      @db.Uuid
-  nombre          String      @db.VarChar(100)
-  apellido        String?     @db.VarChar(100)
-  edad            Int?
-  sexo            String?     @db.VarChar(20)
-  fecha_nacimiento DateTime?  @db.Date
-  domicilio       String?
-  dni             String?     @db.VarChar(15)
-  email           String?     @db.VarChar(150)
-  celular         String?     @db.VarChar(30)
-  prepaga         String?     @db.VarChar(100)
-  plan            String?     @db.VarChar(50)
-  credencial      String?     @db.VarChar(50)
-  created_at      DateTime?   @default(now()) @db.Timestamp(6)
-  updated_at      DateTime?   @updatedAt @db.Timestamp(6)
-  medico          medicos     @relation(fields: [medico_id], references: [id])
-  consultas       consultas[]
+  id               String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  medico_id        String      @db.Uuid
+  nombre           String      @db.VarChar(100)
+  apellido         String?     @db.VarChar(100)
+  edad             Int?
+  sexo             String?     @db.VarChar(20)
+  fecha_nacimiento DateTime?   @db.Date
+  domicilio        String?
+  dni              String?     @db.VarChar(15)
+  email            String?     @db.VarChar(150)
+  celular          String?     @db.VarChar(30)
+  prepaga          String?     @db.VarChar(100)
+  plan             String?     @db.VarChar(50)
+  credencial       String?     @db.VarChar(50)
+  created_at       DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?   @default(now()) @updatedAt @db.Timestamp(6)
+  consultas        consultas[]
+  holds            holds[]
+  medico           medicos     @relation(fields: [medico_id], references: [id], onUpdate: NoAction)
 
   @@unique([medico_id, dni])
+  @@index([medico_id, celular], map: "idx_pacientes_celular")
+  @@index([dni], map: "idx_pacientes_dni")
+  @@index([medico_id], map: "idx_pacientes_medico")
 }
 
 model consultas {
-  id                  String               @id @default(uuid()) @db.Uuid
-  paciente_id         String?              @db.Uuid
-  medico_id           String               @db.Uuid
-  sistema             String?              @db.VarChar(50)
-  motivo              String?
-  evolucion           String?
-  sintomas            Json                 @default("[]")
-  protocolo           Json                 @default("{}")
-  medicacion_habitual String?
-  alergias            String?
-  alarma              Boolean              @default(false)
-  motivo_alarma       String?
-  estado              String               @default("en_curso") @db.VarChar(20)
-  datos_json_completo Json?
-  dentro_cobertura    Boolean?
-  devolucion_medico   String?
-  devolucion_at       DateTime?            @db.Timestamp(6)
-  created_at          DateTime?            @default(now()) @db.Timestamp(6)
-  finalizada_at       DateTime?            @db.Timestamp(6)
-  paciente            pacientes?           @relation(fields: [paciente_id], references: [id])
-  medico              medicos              @relation(fields: [medico_id], references: [id])
-  mensajes            mensajes_consulta[]
-  archivos            archivos_consulta[]
-  informe             informes?
+  id                    String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  paciente_id           String?             @db.Uuid
+  medico_id             String              @db.Uuid
+  sistema               String?             @db.VarChar(50)
+  motivo                String?
+  evolucion             String?
+  sintomas              Json?               @default("[]")
+  protocolo             Json?               @default("{}")
+  medicacion_habitual   String?
+  alergias              String?
+  alarma                Boolean?            @default(false)
+  motivo_alarma         String?
+  estado                String?             @default("en_curso") @db.VarChar(20)
+  datos_json_completo   Json?
+  dentro_cobertura      Boolean?
+  created_at            DateTime?           @default(now()) @db.Timestamp(6)
+  finalizada_at         DateTime?           @db.Timestamp(6)
+  devolucion_medico     String?
+  devolucion_at         DateTime?           @db.Timestamp(6)
+  whatsapp_from         String?             @db.VarChar(30)
+  fecha_hora_turno      DateTime?           @db.Timestamptz(6)
+  duracion_min          Int?                @default(30)
+  modalidad_cobro       String?             @db.VarChar(20)
+  monto_centavos        Int?
+  payment_id_mp         String?             @db.VarChar(50)
+  external_reference_mp String?             @unique(map: "idx_consultas_external_ref", where: raw("(external_reference_mp IS NOT NULL)")) @db.VarChar(100)
+  token_os              String?             @db.VarChar(100)
+  token_estado          String?             @db.VarChar(20)
+  hold_id               String?             @db.Uuid
+  archivos              archivos_consulta[]
+  medico                medicos             @relation(fields: [medico_id], references: [id], onUpdate: NoAction)
+  paciente              pacientes?          @relation(fields: [paciente_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  informe               informes?
+  mensajes              mensajes_consulta[]
+
+  @@index([created_at], map: "idx_consultas_created")
+  @@index([estado], map: "idx_consultas_estado")
+  @@index([medico_id, fecha_hora_turno], map: "idx_consultas_fecha_hora")
+  @@index([medico_id], map: "idx_consultas_medico")
+  @@index([paciente_id], map: "idx_consultas_paciente")
 }
 
 model mensajes_consulta {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   consulta_id String    @db.Uuid
   rol         String    @db.VarChar(20)
   contenido   String
   orden       Int
   created_at  DateTime? @default(now()) @db.Timestamp(6)
-  consulta    consultas @relation(fields: [consulta_id], references: [id])
+  consulta    consultas @relation(fields: [consulta_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([consulta_id], map: "idx_mensajes_consulta")
+  @@index([consulta_id, orden], map: "idx_mensajes_orden")
 }
 
 model archivos_consulta {
-  id             String    @id @default(uuid()) @db.Uuid
-  consulta_id    String    @db.Uuid
-  tipo           String?   @db.VarChar(30)
+  id             String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  consulta_id    String?    @db.Uuid
+  tipo           String?    @db.VarChar(30)
   url            String
-  nombre_archivo String?   @db.VarChar(200)
-  created_at     DateTime? @default(now()) @db.Timestamp(6)
-  consulta       consultas @relation(fields: [consulta_id], references: [id])
+  nombre_archivo String?    @db.VarChar(200)
+  created_at     DateTime?  @default(now()) @db.Timestamp(6)
+  whatsapp_from  String?    @db.VarChar(30)
+  consulta       consultas? @relation(fields: [consulta_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([consulta_id], map: "idx_archivos_consulta")
 }
 
 model informes {
-  id             String    @id @default(uuid()) @db.Uuid
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   consulta_id    String    @unique @db.Uuid
   google_doc_url String?
   google_doc_id  String?   @db.VarChar(100)
-  estado         String    @default("generado") @db.VarChar(20)
+  estado         String?   @default("generado") @db.VarChar(20)
   enviado_at     DateTime? @db.Timestamp(6)
   revisado_at    DateTime? @db.Timestamp(6)
   created_at     DateTime? @default(now()) @db.Timestamp(6)
-  consulta       consultas @relation(fields: [consulta_id], references: [id])
+  consulta       consultas @relation(fields: [consulta_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([consulta_id], map: "idx_informes_consulta")
 }
 
 model planes {
-  id               String          @id @default(uuid()) @db.Uuid
-  nombre           String          @db.VarChar(50)
-  precio_mensual   Decimal         @db.Decimal(10, 2)
+  id                String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nombre            String          @db.VarChar(50)
+  precio_mensual    Decimal         @db.Decimal(10, 2)
   max_consultas_mes Int?
-  descripcion      String?
-  activo           Boolean         @default(true)
-  created_at       DateTime?       @default(now()) @db.Timestamp(6)
-  suscripciones    suscripciones[]
+  descripcion       String?
+  activo            Boolean?        @default(true)
+  created_at        DateTime?       @default(now()) @db.Timestamp(6)
+  suscripciones     suscripciones[]
 }
 
 model suscripciones {
-  id                  String    @id @default(uuid()) @db.Uuid
-  medico_id           String    @db.Uuid
-  plan_id             String    @db.Uuid
-  estado              String    @default("activa") @db.VarChar(20)
-  fecha_inicio        DateTime  @db.Date
-  fecha_fin           DateTime? @db.Date
-  fecha_proximo_pago  DateTime? @db.Date
-  created_at          DateTime? @default(now()) @db.Timestamp(6)
-  updated_at          DateTime? @updatedAt @db.Timestamp(6)
-  medico              medicos   @relation(fields: [medico_id], references: [id])
-  plan                planes    @relation(fields: [plan_id], references: [id])
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  medico_id          String    @db.Uuid
+  plan_id            String    @db.Uuid
+  estado             String?   @default("activa") @db.VarChar(20)
+  fecha_inicio       DateTime  @db.Date
+  fecha_fin          DateTime? @db.Date
+  fecha_proximo_pago DateTime? @db.Date
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+  updated_at         DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  medico             medicos   @relation(fields: [medico_id], references: [id], onUpdate: NoAction)
+  plan               planes    @relation(fields: [plan_id], references: [id], onUpdate: NoAction)
+
+  @@index([medico_id], map: "idx_suscripciones_medico")
+}
+
+model holds {
+  id                 String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  medico_id          String     @db.Uuid
+  paciente_id        String?    @db.Uuid
+  whatsapp_from      String     @db.VarChar(30)
+  slot_datetime      DateTime   @db.Timestamptz(6)
+  modalidad          String     @db.VarChar(20)
+  monto_centavos     Int?
+  datos_json         Json       @default("{}")
+  external_reference String?    @unique @db.VarChar(100)
+  expires_at         DateTime   @db.Timestamptz(6)
+  estado             String     @default("activo") @db.VarChar(20)
+  created_at         DateTime?  @default(now()) @db.Timestamptz(6)
+  medicos            medicos    @relation(fields: [medico_id], references: [id], onUpdate: NoAction)
+  pacientes          pacientes? @relation(fields: [paciente_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([expires_at], map: "idx_holds_expires", where: raw("((estado)::text = 'activo'::text)"))
+  @@index([medico_id, slot_datetime], map: "idx_holds_slot", where: raw("((estado)::text = 'activo'::text)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model horarios_medicos {
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  medico_id          String    @db.Uuid
+  dia_semana         Int       @db.SmallInt
+  hora_inicio        DateTime  @db.Time(6)
+  hora_fin           DateTime  @db.Time(6)
+  duracion_turno_min Int       @default(30)
+  activo             Boolean   @default(true)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
+  medicos            medicos   @relation(fields: [medico_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([medico_id], map: "idx_horarios_medicos_medico", where: raw("(activo = true)"))
 }

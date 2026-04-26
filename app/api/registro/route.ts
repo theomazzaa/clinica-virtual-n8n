@@ -4,12 +4,19 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { nombre, apellido, email, password, matricula, especialidad } =
+    const { nombre, apellido, email, password, matricula, especialidad, telefono_whatsapp } =
       await req.json();
 
     if (!nombre || !apellido || !email || !password || !matricula) {
       return NextResponse.json(
         { error: "Faltan campos obligatorios" },
+        { status: 400 }
+      );
+    }
+
+    if (!telefono_whatsapp) {
+      return NextResponse.json(
+        { error: "telefono_whatsapp es requerido" },
         { status: 400 }
       );
     }
@@ -39,6 +46,7 @@ export async function POST(req: Request) {
         password_hash,
         matricula_nacional: matricula,
         especialidad: especialidad || null,
+        telefono_whatsapp,
         zonas_cobertura: [],
       },
     });

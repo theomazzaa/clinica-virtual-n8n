@@ -6,6 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
+  Calendar,
   Users,
   AlertTriangle,
   Settings,
@@ -18,6 +19,7 @@ import Avatar from "@/components/ui/Avatar";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { href: "/agenda", label: "Agenda", Icon: Calendar },
   { href: "/pacientes", label: "Pacientes", Icon: Users },
   { href: "/alarmas", label: "Alertas", Icon: AlertTriangle, badge: true },
   { href: "/configuracion", label: "Configuracion", Icon: Settings },

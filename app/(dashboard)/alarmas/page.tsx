@@ -43,6 +43,10 @@ export default async function AlarmasPage() {
     ...a,
     created_at: a.created_at ? a.created_at.toISOString() : null,
     finalizada_at: a.finalizada_at ? a.finalizada_at.toISOString() : null,
+    estado: a.estado ?? "en_curso",
+    informe: a.informe
+      ? { ...a.informe, estado: a.informe.estado ?? "generado" }
+      : null,
   }));
 
   return (

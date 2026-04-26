@@ -47,6 +47,8 @@ export default async function PacientesPage() {
     consultas: p.consultas.map((c) => ({
       ...c,
       created_at: c.created_at ? c.created_at.toISOString() : null,
+      estado: c.estado ?? "en_curso",
+      alarma: c.alarma ?? false,
       informe: c.informe ?? null,
     })),
   }));

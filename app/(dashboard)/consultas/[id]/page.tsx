@@ -74,7 +74,7 @@ export default async function DetalleConsultaPage({
     ? `${paciente.nombre} ${paciente.apellido ?? ""}`.trim()
     : "Paciente desconocido";
 
-  const badgeVariant = consulta.alarma ? "urgente" : consulta.estado;
+  const badgeVariant = consulta.alarma ? "urgente" : (consulta.estado ?? "en_curso");
 
   // Serialize dates for client
   const mensajesSerializados = consulta.mensajes.map((m) => ({
@@ -97,6 +97,8 @@ export default async function DetalleConsultaPage({
   const historial = historialRaw.map((h) => ({
     ...h,
     created_at: h.created_at ? h.created_at.toISOString() : null,
+    estado: h.estado ?? "en_curso",
+    alarma: h.alarma ?? false,
   }));
 
   return (
@@ -155,7 +157,7 @@ export default async function DetalleConsultaPage({
           consulta: {
             motivo: consulta.motivo,
             evolucion: consulta.evolucion,
-            alarma: consulta.alarma,
+            alarma: consulta.alarma ?? false,
             motivo_alarma: consulta.motivo_alarma,
             sintomas: consulta.sintomas as Record<string, unknown>,
             medicacion_habitual: consulta.medicacion_habitual,

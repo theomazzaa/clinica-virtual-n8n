@@ -144,11 +144,13 @@ export default async function DashboardPage() {
     recientes,
   } = data;
 
-  const recientesSerializados = recientes.map((c: ConsultaReciente) => ({
+  const recientesSerializados = recientes.map((c) => ({
     ...c,
     created_at: c.created_at ? c.created_at.toISOString() : null,
     finalizada_at: c.finalizada_at ? c.finalizada_at.toISOString() : null,
     devolucion_at: c.devolucion_at ? c.devolucion_at.toISOString() : null,
+    estado: c.estado ?? "en_curso",
+    alarma: c.alarma ?? false,
     sintomas: c.sintomas as Record<string, unknown>,
     protocolo: c.protocolo as Record<string, unknown>,
     datos_json_completo: c.datos_json_completo as Record<string, unknown> | null,
